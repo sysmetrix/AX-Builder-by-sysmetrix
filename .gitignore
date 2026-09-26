@@ -1,0 +1,9 @@
+.playwright-mcp/
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+
+# raw captures and internal audits must never reach the public repo
+assets/
+review/project-inventory-audit.md

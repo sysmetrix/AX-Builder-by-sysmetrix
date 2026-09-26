@@ -1,0 +1,175 @@
+export interface CaseStudyDetail {
+  before: string;
+  after: string;
+  built: string[];
+  decisions: string[];
+  impact: string;
+  engineering: string[];
+  evolution: string;
+  related: string[];
+}
+
+/**
+ * Production case-study copy for the six Selected Work entries.
+ * Every statement is grounded in the project brief or the prior full case-study draft.
+ * Deliberately contains no performance metrics or publication decisions that still need approval.
+ */
+export const caseStudies: Record<string, CaseStudyDetail> = {
+  "performance-management-system": {
+    before:
+      "부서별 실적, 확인·반려, 월·분기 집계와 평가 준비가 Excel과 개별 문서에 흩어져 있었습니다. 담당자가 같은 자료를 반복 확인하고 다음 단계로 직접 연결해야 했습니다.",
+    after:
+      "조직 구성원이 역할과 부서 범위 안에서 실적을 입력하고, 확인요청·승인·반려 상태를 같은 규칙으로 처리하는 운영 흐름으로 바뀌었습니다.",
+    built: [
+      "실적 유형, 사용자 역할과 부서 범위를 분리한 데이터·권한 모델",
+      "입력 → 확인요청 → 확인·반려 → 재입력으로 이어지는 상태 전이",
+      "대시보드, 기간 잠금, 감사로그와 집계·보고 흐름",
+      "같은 기반에서 운영계획과 평가 준비까지 확장할 수 있는 구조",
+    ],
+    decisions: [
+      "화면보다 업무 규칙과 상태 전이를 먼저 정의했습니다.",
+      "애플리케이션과 데이터 계층에서 역할·부서 권한을 다시 확인하도록 설계했습니다.",
+      "기능 명세, 운영 플레이북과 검증 게이트를 코드와 함께 관리 대상으로 두었습니다.",
+    ],
+    impact:
+      "성과관리 담당자가 자료를 취합해 결과를 만드는 방식에서, 조직 구성원이 하나의 시스템 안에서 같은 규칙으로 입력하고 상태를 확인하는 방식으로 업무 구조를 바꿨습니다.",
+    engineering: [
+      "Next.js App Router와 TypeScript, Supabase Auth/DB, RLS와 관리자 MFA를 기반으로 운영 권한을 구성했습니다.",
+      "코드 변경과 문서·릴리스 기록의 정합성, 권한 규칙과 운영 상태를 검증 대상으로 분리했습니다.",
+    ],
+    evolution:
+      "실적 입력·검증의 핵심 흐름에서 시작해 대시보드와 보고, 운영계획과 평가 준비를 같은 운영 시스템 안으로 확장했습니다.",
+    related: ["survey-intelligence", "annual-plan-automation"],
+  },
+  "survey-intelligence": {
+    before:
+      "결과 파일 정리, 통계, 그래프, 성과지표 판정, 결과 문장, 한글 보고서, 발표자료가 서로 다른 파일과 도구에 나뉘어 있어 사업마다 처음부터 다시 만들어야 했습니다.",
+    after:
+      "분석·해석·보고서·발표자료를 따로 만들던 결과평가가, 한 번 올린 설문 결과에서 이어지는 하나의 흐름으로 바뀌었습니다.",
+    built: [
+      "만족도, 성과지표(목표·실적·달성률), 사전·사후 변화와 집단 차이, 효과크기 분석",
+      "사업 결과평가에 필요한 성과지표 판정과 근거 확인",
+      "담당자가 검토·수정할 수 있는 분석문과 근거 변경 흐름",
+      "HWPX 결과보고서와 PPTX·HTML·PDF 발표자료 산출",
+      "담당자가 이미 쓰는 설문 도구(Google Forms·Naver Forms 등)의 Excel·CSV 결과 파일을 그대로 받는 입력 계층",
+    ],
+    decisions: [
+      "담당자가 이미 쓰는 설문 도구의 결과 파일을 다시 가공하지 않아도 되도록, 원본을 가능한 그대로 받게 했습니다.",
+      "자동 판정 결과를 확정값으로 숨기지 않고 담당자가 확인·수정할 수 있게 했습니다.",
+      "민감한 조사자료를 다루는 도구의 원칙으로 로컬 우선 처리를 채택했습니다.",
+    ],
+    impact:
+      "통계 출력에서 끝나던 결과평가 업무를 결과보고서와 발표자료까지 이어지는 반복 가능한 작업 흐름으로 통합했습니다.",
+    engineering: [
+      "서로 다른 응답 문구와 열 구조를 분석 가능한 형태로 정규화하고 통계·성과판정 로직으로 연결했습니다.",
+      "분석 결과가 편집 가능한 문장과 여러 문서 형식에서도 이어지도록 산출 계층을 분리했습니다.",
+    ],
+    evolution:
+      "파일 입력과 기초 분석에서 출발해 성과판정, 분석문 편집, 결과보고서와 발표자료 제작까지 도구의 범위를 넓혔습니다.",
+    related: ["performance-management-system", "to-hwpx"],
+  },
+  "to-hwpx": {
+    before:
+      "AI·Markdown·웹에서 만든 결과도 최종 HWPX 문서가 필요하면 복사·붙여넣기와 서식 수정 과정을 다시 거쳐야 했습니다.",
+    after:
+      "Web·CLI·MCP가 공통 렌더링 코어를 사용하고, 생성 뒤 구조 검증까지 수행하는 문서 엔진으로 연결했습니다.",
+    built: [
+      "Markdown·HTML·DOCX·CSV/XLSX 등 여러 입력을 받는 변환 계층",
+      "Web·CLI·MCP가 공유하는 중간표현과 렌더링 코어",
+      "HWPX 패키지 생성과 역방향 구조 추출",
+      "패키지·round-trip·core parity·MCP protocol 품질 게이트",
+    ],
+    decisions: [
+      "진입점마다 변환 로직을 복제하지 않고 공통 코어를 공유하도록 했습니다.",
+      "문서가 열리는지만 보지 않고 패키지와 XML 관계, 표·링크·이미지 구조를 따로 검사했습니다.",
+      "MCP는 실제 stdio JSON-RPC 계층까지 검증 대상으로 두었습니다.",
+    ],
+    impact:
+      "브라우저용 단일 변환기를 사람과 자동화 도구, AI 에이전트가 함께 사용할 수 있는 한국형 문서 엔진으로 확장했습니다.",
+    engineering: [
+      "ZIP 패키지 무결성, XML 참조 관계와 문서 요소의 구조 보존을 독립된 검사로 다룹니다.",
+      "golden, package, round-trip, core parity와 protocol 테스트로 서로 다른 실패 지점을 분리합니다.",
+    ],
+    evolution:
+      "Markdown → HWPX 브라우저 MVP에서 다중 입력, 공통 렌더러, CLI, 역변환, MCP 서버와 다층 QA로 단계적으로 진화했습니다.",
+    related: ["survey-intelligence", "toolbox"],
+  },
+  "security-checkup": {
+    before:
+      "매월 내려받은 보안점검 Excel을 직원 명부와 일일이 대조하고, 결과를 부서별로 다시 분류해 보고서를 만들어야 했습니다.",
+    after:
+      "이름·IP·사전규칙으로 연결 가능한 항목은 자동 처리하고, 판단이 필요한 미확인 기기만 사람이 검토하는 예외 중심 흐름으로 바꿨습니다.",
+    built: [
+      "보안점검 Excel·CSV와 직원명부 입력",
+      "이름·IP·중복 제외 규칙을 이용한 자동 매핑",
+      "미확인 기기만 남기는 수동 할당·검토 흐름",
+      "부서별 현황과 Excel·HWPX·PDF 산출",
+    ],
+    decisions: [
+      "불확실한 항목까지 강제로 자동화하지 않고 예외 검토 단계로 분리했습니다.",
+      "반복되는 매핑 판단은 사전규칙으로 남겨 다음 작업에 재사용하도록 했습니다.",
+      "공개 사례에는 가상 데이터만 사용하고 실제 보안점수·직원·기기정보는 노출하지 않습니다.",
+    ],
+    impact:
+      "전체 자료를 사람이 다시 대조하고 작성하던 업무를, 시스템이 반복 항목을 처리하고 사람이 예외만 판단하는 방식으로 바꿨습니다.",
+    engineering: [
+      "입력 파일의 서로 다른 식별자를 규칙에 따라 매핑하고, 자동 확정과 사람의 검토 대상을 분리했습니다.",
+      "같은 정리 결과를 대시보드와 부서별 문서 산출에서 재사용하도록 구성했습니다.",
+    ],
+    evolution:
+      "수동 대조 자동화에서 시작해 사전규칙, 예외 검토, 부서별 현황과 여러 보고 형식으로 확장했습니다.",
+    related: ["performance-management-system", "survey-intelligence"],
+  },
+  toolbox: {
+    before:
+      "HWP·Word·Excel·PowerPoint의 일괄 PDF·인쇄와 Windows 정리는 브라우저 안에서 설치된 한글·Office와 같은 수준으로 처리하기 어려웠습니다.",
+    after:
+      "설치된 한글·Office를 직접 제어하고, 오류 복구와 안전장치까지 포함한 Windows 데스크톱 작업 흐름으로 만들었습니다.",
+    built: [
+      "한글·Word·Excel·PowerPoint 혼합 배치 PDF 변환과 인쇄",
+      "형식별 옵션, PDF 병합과 진행 상태 관리",
+      "장시간 배치를 위한 한글·Office 재시작과 오류 문서 워치독",
+      "복구 가능성을 고려한 시스템 정리와 파일·자동 시작 항목 분석",
+    ],
+    decisions: [
+      "문서 형식을 흉내 내기보다 설치된 한글·Office가 직접 렌더링하도록 COM을 선택했습니다.",
+      "오류 한 건이 전체 배치를 멈추지 않도록 실패 문서를 격리하고 처리 상태를 남기도록 했습니다.",
+      "삭제 작업에는 안전등급, 보호경로와 복구 가능한 경로를 우선 적용했습니다.",
+    ],
+    impact:
+      "실제 한글·Office와 운영체제가 필요한 반복업무에 맞는 실행환경을 선택해 해결했습니다.",
+    engineering: [
+      "Python·PySide6와 COM 자동화를 이용해 서로 다른 Office 애플리케이션의 실행·대기·종료 조건을 조율합니다.",
+      "한글·Office 재시작, 워치독과 오류 격리로 장시간 배치가 실패했을 때의 복구 가능성을 기능에 포함했습니다.",
+    ],
+    evolution:
+      "혼합 문서 배치 처리에서 시작해 PDF 병합과 인쇄, 안정화 장치, 안전 정리와 시스템 분석 도구로 확장했습니다.",
+    related: ["to-hwpx", "security-checkup"],
+  },
+  "annual-plan-automation": {
+    before:
+      "방대한 운영계획을 발표자료로 다시 만들 때 원문 사실과 수치의 연결이 끊기고, 청중별 수정 과정에서 누락과 디자인 편차가 생기기 쉬웠습니다.",
+    after:
+      "원문 구조화부터 사실 고정, 청중 전략, 시범본과 렌더 QA를 거쳐 편집 가능한 마스터와 파생본을 만드는 생산 공정으로 분리했습니다.",
+    built: [
+      "원문 PDF를 페이지 단위로 구조화하는 사실 추출 단계",
+      "수치·사실의 단일 원천과 상충 정보를 위한 질문 목록",
+      "슬라이드별 주장·근거·출처·시각화·발표자 메모가 있는 스토리보드",
+      "PPTX → PDF·PNG 렌더와 contact sheet 기반 시각 검수",
+    ],
+    decisions: [
+      "AI에게 완성본을 한 번에 요청하지 않고 사실, 메시지, 시각화와 검수 단계를 분리했습니다.",
+      "수치와 사실은 단일 원천에서만 가져오고 상충 정보는 임의로 정리하지 않고 질문으로 격리했습니다.",
+      "대상별 자료는 별도 생성하지 않고 검증된 마스터에서 파생하도록 했습니다.",
+    ],
+    impact:
+      "생성형 AI의 문서 제작을, 근거성과 재현성을 관리할 수 있는 반복 생산 시스템으로 전환했습니다.",
+    engineering: [
+      "디자인 토큰과 레이아웃 규칙을 고정하고, 슬라이드를 PDF·PNG로 렌더해 잘림과 겹침을 실제 산출물 기준으로 검사합니다.",
+      "핵심 텍스트와 도형은 최종 PPTX에서도 편집 가능한 객체로 유지합니다.",
+    ],
+    evolution:
+      "원문 요약에서 출발하지 않고 7장 시범본으로 사실과 디자인 규칙을 검증한 뒤, 마스터 덱과 청중별 파생본으로 확장하는 공정을 정립했습니다.",
+    related: ["survey-intelligence", "performance-management-system"],
+  },
+};
