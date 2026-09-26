@@ -2,7 +2,7 @@ import { caseStudyProjects } from "./catalog";
 
 export const siteName = "AX Builder by sysmetrix";
 export const siteDescription =
-  "I build systems for better public work. 청소년 현장과 사업을 기반으로 정책·성과·데이터·AX를 연결해 실제 업무에 쓰이는 시스템과 도구를 만듭니다.";
+  "청소년 현장과 사업을 출발점으로 정책·성과·데이터·AX를 연결해, 실제 업무에 쓰이는 시스템과 도구를 만듭니다. I build systems for better public work.";
 
 /**
  * Deploy-time configuration — there is intentionally NO default URL.

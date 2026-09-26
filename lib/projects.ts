@@ -164,8 +164,6 @@ export const projects: Project[] = [
     solution: "자동 매핑, 미확인 기기 검토, 저장 규칙, 부서별 통계와 Excel/HWPX/PDF 내보내기를 구현했습니다.",
     outcome: "전체 자료를 사람이 재작성하는 업무를 시스템이 처리하고 사람은 예외만 판단하도록 바꿨습니다.",
     tags: ["JavaScript", "SheetJS", "JSZip", "HWPX", "Local-first"],
-    repoUrl: "https://github.com/sysmetrix/security-checkup",
-    liveUrl: "https://sysmetrix.github.io/security-checkup",
     role: "업무 흐름 설계 · 개발 · 내부 배포",
     screenshotCaptions: [
       "보안관제 Excel을 올리고 자동 매핑을 시작하는 1단계",

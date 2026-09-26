@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 // Generation structure for the default social card (Latin-only: no Hangul font is bundled here).
 // Working placeholder, not the final OG artwork. Served at /og and referenced from metadata ONLY
-// when NEXT_PUBLIC_SITE_URL is set (the file-convention opengraph-image would bake in a localhost URL).
+// when NEXT_PUBLIC_SITE_URL is set (the file-convention opengraph-image would bake in a wrong host).
 export const dynamic = "force-static";
 
 const ogSize = { width: 1200, height: 630 };

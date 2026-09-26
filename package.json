@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run typecheck && npm run build",
-    "qa:seo": "node qa/seo.mjs"
+    "verify": "npm run typecheck && npm run build"
   },
   "dependencies": {
     "geist": "^1.7.2",

@@ -127,7 +127,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
     built: [
       "한글·Word·Excel·PowerPoint 혼합 배치 PDF 변환과 인쇄",
       "형식별 옵션, PDF 병합과 진행 상태 관리",
-      "장시간 배치를 위한 한글·Office 재시작과 오류 문서 오류 감시 장치",
+      "장시간 배치를 위한 한글·Office 재시작과 오류 문서 감시 장치",
       "복구 가능성을 고려한 시스템 정리와 파일·자동 시작 항목 분석",
     ],
     decisions: [
@@ -139,7 +139,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "실제 한글·Office와 운영체제가 필요한 반복업무에 맞는 실행환경을 선택해 해결했습니다.",
     engineering: [
       "Python·PySide6와 COM 자동화를 이용해 서로 다른 Office 애플리케이션의 실행·대기·종료 조건을 조율합니다.",
-      "한글·Office 재시작, 오류 감시 장치과 오류 격리로 장시간 배치가 실패했을 때의 복구 가능성을 기능에 포함했습니다.",
+      "한글·Office 재시작, 오류 감시 장치와 오류 격리로 장시간 배치가 실패했을 때의 복구 가능성을 기능에 포함했습니다.",
     ],
     evolution:
       "혼합 문서 배치 처리에서 시작해 PDF 병합과 인쇄, 안정화 장치, 안전 정리와 시스템 분석 도구로 확장했습니다.",
@@ -168,7 +168,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "핵심 텍스트와 도형은 최종 PPTX에서도 편집 가능한 객체로 유지합니다.",
     ],
     evolution:
-      "원문 요약에서 출발하지 않고 7장 시범본으로 사실과 디자인 규칙을 검증한 뒤, 기준 발표자료과 청중별 파생본으로 확장하는 공정을 정립했습니다.",
+      "원문 요약에서 출발하지 않고 7장 시범본으로 사실과 디자인 규칙을 검증한 뒤, 기준 발표자료와 청중별 파생본으로 확장하는 공정을 정립했습니다.",
     related: ["survey-intelligence", "performance-management-system"],
   },
 };

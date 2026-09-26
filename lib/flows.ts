@@ -78,7 +78,7 @@ export const flows: Record<string, Flow> = {
       { label: "HWP · Word · Excel · PPT가 섞인 문서 목록", source: true },
       { label: "설치된 한글·Office를 직접 제어" },
       { label: "일괄 PDF 변환 · 인쇄 · 병합" },
-      { label: "오류 문서 오류 감시과 자동 재시작" },
+      { label: "오류 문서 감시와 자동 재시작" },
       { label: "안전등급이 있는 시스템 정리 · 분석" },
     ],
     compactSteps: ["혼합 문서", "한글·Office 제어", "변환·복구"],
