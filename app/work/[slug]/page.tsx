@@ -133,7 +133,7 @@ export default async function CaseStudy({ params }: { params: Promise<{ slug: st
       <section className="case-sec" aria-labelledby="c-system">
         <h2 id="c-system">시스템</h2>
         <div>
-          <p>{p.solution}</p>
+          {!detail && <p>{p.solution}</p>}
           {detail && (
             <>
               <p className="mono-ko case-label">구성</p>

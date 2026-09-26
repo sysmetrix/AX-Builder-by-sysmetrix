@@ -161,7 +161,7 @@ export const projects: Project[] = [
     status: "Live",
     oneLiner: "보안점검 엑셀과 직원·기기정보를 자동 매핑하고 부서별 결과와 보고서를 생성.",
     problem: "보안점검 결과를 직원별 PC와 수동 대조하고 부서별로 다시 분류해 보고서를 만드는 작업이 반복됐습니다.",
-    solution: "자동 매핑, 미확인 기기 검토, 사전규칙, 부서별 통계와 Excel/HWPX/PDF 내보내기를 구현했습니다.",
+    solution: "자동 매핑, 미확인 기기 검토, 저장 규칙, 부서별 통계와 Excel/HWPX/PDF 내보내기를 구현했습니다.",
     outcome: "전체 자료를 사람이 재작성하는 업무를 시스템이 처리하고 사람은 예외만 판단하도록 바꿨습니다.",
     tags: ["JavaScript", "SheetJS", "JSZip", "HWPX", "Local-first"],
     repoUrl: "https://github.com/sysmetrix/security-checkup",
@@ -170,7 +170,7 @@ export const projects: Project[] = [
     screenshotCaptions: [
       "보안관제 Excel을 올리고 자동 매핑을 시작하는 1단계",
       "자동으로 연결되지 않은 기기만 사람이 검토하는 예외 처리 화면",
-      "부서별 안전·취약·미점검 현황과 취약항목을 보는 최종 대시보드"
+      "부서별 안전·취약·미점검 현황을 한눈에 보는 결과 화면"
     ],
     screens: [
       {
@@ -189,10 +189,10 @@ export const projects: Project[] = [
       },
       {
         src: "/projects/security-checkup/03-dashboard.webp",
-        alt: "샘플 부서와 가상 보안점수로 구성한 안전·취약·미점검 결과 대시보드",
+        alt: "샘플 부서와 가상 보안점수로 구성한 안전·취약·미점검 부서별 현황 표",
         width: 1249,
-        height: 762,
-        caption: "샘플 데이터로 구성한 부서별 현황과 취약항목 분석 대시보드",
+        height: 545,
+        caption: "샘플 데이터로 구성한 부서별 안전·취약·미점검 현황",
       },
     ],
   },
@@ -207,7 +207,7 @@ export const projects: Project[] = [
     status: "Active",
     oneLiner: "한글·Office 문서 처리와 Windows 반복업무를 묶은 데스크톱 자동화 도구.",
     problem: "HWP·Word·Excel·PowerPoint 일괄 PDF/인쇄와 시스템 정리는 브라우저만으로 안정적으로 처리하기 어려웠습니다.",
-    solution: "설치된 한글·Office를 COM으로 직접 제어하고 배치 변환, PDF 병합, 워치독, 안전 정리와 분석 도구를 통합했습니다.",
+    solution: "설치된 한글·Office를 COM으로 직접 제어하고 배치 변환, PDF 병합, 오류 감시, 안전 정리와 분석 도구를 통합했습니다.",
     outcome: "문제를 웹 환경에 맞춰 줄이지 않고 필요한 실행환경을 선택해 해결했습니다.",
     tags: ["Python", "PySide6", "COM", "pyhwpx", "Windows", "pypdf"],
     role: "데스크톱 제품 · 자동화 엔지니어링",

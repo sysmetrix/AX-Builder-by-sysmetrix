@@ -216,7 +216,7 @@ section.block { padding-bottom: clamp(56px, 8vw, 104px); }
 .flow li { counter-increment: s; padding: 14px 12px 14px 0; border-top: 2px solid var(--rule); font-size: 14.5px; line-height: 1.5; }
 .flow li::before { content: "0" counter(s); display: block; font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; line-height: 1.1; color: var(--accent); margin-bottom: 6px; }
 .flow li.src { border-top-style: dashed; color: var(--ink3); }
-figcaption { font-family: var(--mono); font-size: 11px; color: var(--ink3); margin-top: 16px; letter-spacing: 0.04em; }
+figcaption { font-family: var(--sans); font-size: 13px; line-height: 1.55; color: var(--ink3); margin-top: 16px; }
 .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 3vw, 48px); margin-top: 28px; }
 .notes h4 { font-weight: 500; line-height: 1; margin-bottom: 8px; }
 .notes p { font-size: 15.5px; color: var(--ink2); line-height: 1.65; }
@@ -313,6 +313,7 @@ figcaption { font-family: var(--mono); font-size: 11px; color: var(--ink3); marg
   .sec-h p { display: none; }
 }
 @media (max-width: 560px) {
+  .brand small { display: none; }
   body { font-size: 16px; }
   .flow { display: none; }
   .flow-summary { display: block; }

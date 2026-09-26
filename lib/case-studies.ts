@@ -34,7 +34,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
     impact:
       "성과관리 담당자가 자료를 취합해 결과를 만드는 방식에서, 조직 구성원이 하나의 시스템 안에서 같은 규칙으로 입력하고 상태를 확인하는 방식으로 업무 구조를 바꿨습니다.",
     engineering: [
-      "Next.js App Router와 TypeScript, Supabase Auth/DB, RLS와 관리자 MFA를 기반으로 운영 권한을 구성했습니다.",
+      "웹 프레임워크(Next.js)와 Supabase 인증·데이터베이스 위에, 행 단위 접근 제한과 관리자 2단계 인증으로 운영 권한을 구성했습니다.",
       "코드 변경과 문서·릴리스 기록의 정합성, 권한 규칙과 운영 상태를 검증 대상으로 분리했습니다.",
     ],
     evolution:
@@ -77,18 +77,18 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "Markdown·HTML·DOCX·CSV/XLSX 등 여러 입력을 받는 변환 계층",
       "Web·CLI·MCP가 공유하는 중간표현과 렌더링 코어",
       "HWPX 패키지 생성과 역방향 구조 추출",
-      "패키지·round-trip·core parity·MCP protocol 품질 게이트",
+      "패키지 구조, 변환 후 되돌리기(round-trip), 진입점 간 결과 일치, MCP 프로토콜을 확인하는 품질 검사",
     ],
     decisions: [
       "진입점마다 변환 로직을 복제하지 않고 공통 코어를 공유하도록 했습니다.",
       "문서가 열리는지만 보지 않고 패키지와 XML 관계, 표·링크·이미지 구조를 따로 검사했습니다.",
-      "MCP는 실제 stdio JSON-RPC 계층까지 검증 대상으로 두었습니다.",
+      "AI 에이전트가 호출하는 MCP 연결도 실제 통신 계층까지 검증 대상으로 두었습니다.",
     ],
     impact:
       "브라우저용 단일 변환기를 사람과 자동화 도구, AI 에이전트가 함께 사용할 수 있는 한국형 문서 엔진으로 확장했습니다.",
     engineering: [
-      "ZIP 패키지 무결성, XML 참조 관계와 문서 요소의 구조 보존을 독립된 검사로 다룹니다.",
-      "golden, package, round-trip, core parity와 protocol 테스트로 서로 다른 실패 지점을 분리합니다.",
+      "문서 파일(ZIP)의 무결성, 내부 XML 참조 관계, 표·이미지 같은 요소의 구조 보존을 각각 독립된 검사로 다룹니다.",
+      "기준 문서 비교, 패키지, 되돌리기, 결과 일치, 프로토콜 테스트로 서로 다른 실패 지점을 나눠 확인합니다.",
     ],
     evolution:
       "Markdown → HWPX 브라우저 MVP에서 다중 입력, 공통 렌더러, CLI, 역변환, MCP 서버와 다층 QA로 단계적으로 진화했습니다.",
@@ -98,7 +98,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
     before:
       "매월 내려받은 보안점검 Excel을 직원 명부와 일일이 대조하고, 결과를 부서별로 다시 분류해 보고서를 만들어야 했습니다.",
     after:
-      "이름·IP·사전규칙으로 연결 가능한 항목은 자동 처리하고, 판단이 필요한 미확인 기기만 사람이 검토하는 예외 중심 흐름으로 바꿨습니다.",
+      "이름·IP·저장 규칙으로 연결 가능한 항목은 자동 처리하고, 판단이 필요한 미확인 기기만 사람이 검토하는 예외 중심 흐름으로 바꿨습니다.",
     built: [
       "보안점검 Excel·CSV와 직원명부 입력",
       "이름·IP·중복 제외 규칙을 이용한 자동 매핑",
@@ -107,8 +107,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
     ],
     decisions: [
       "불확실한 항목까지 강제로 자동화하지 않고 예외 검토 단계로 분리했습니다.",
-      "반복되는 매핑 판단은 사전규칙으로 남겨 다음 작업에 재사용하도록 했습니다.",
-      "공개 사례에는 가상 데이터만 사용하고 실제 보안점수·직원·기기정보는 노출하지 않습니다.",
+      "반복되는 매핑 판단은 저장 규칙으로 남겨 다음 작업에 재사용하도록 했습니다.",
     ],
     impact:
       "전체 자료를 사람이 다시 대조하고 작성하던 업무를, 시스템이 반복 항목을 처리하고 사람이 예외만 판단하는 방식으로 바꿨습니다.",
@@ -117,7 +116,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "같은 정리 결과를 대시보드와 부서별 문서 산출에서 재사용하도록 구성했습니다.",
     ],
     evolution:
-      "수동 대조 자동화에서 시작해 사전규칙, 예외 검토, 부서별 현황과 여러 보고 형식으로 확장했습니다.",
+      "수동 대조 자동화에서 시작해 저장 규칙, 예외 검토, 부서별 현황과 여러 보고 형식으로 확장했습니다.",
     related: ["performance-management-system", "survey-intelligence"],
   },
   toolbox: {
@@ -128,11 +127,11 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
     built: [
       "한글·Word·Excel·PowerPoint 혼합 배치 PDF 변환과 인쇄",
       "형식별 옵션, PDF 병합과 진행 상태 관리",
-      "장시간 배치를 위한 한글·Office 재시작과 오류 문서 워치독",
+      "장시간 배치를 위한 한글·Office 재시작과 오류 문서 오류 감시 장치",
       "복구 가능성을 고려한 시스템 정리와 파일·자동 시작 항목 분석",
     ],
     decisions: [
-      "문서 형식을 흉내 내기보다 설치된 한글·Office가 직접 렌더링하도록 COM을 선택했습니다.",
+      "문서 형식을 흉내 내기보다 설치된 한글·Office가 직접 렌더링하도록, 프로그램을 직접 제어하는 방식(COM)을 택했습니다.",
       "오류 한 건이 전체 배치를 멈추지 않도록 실패 문서를 격리하고 처리 상태를 남기도록 했습니다.",
       "삭제 작업에는 안전등급, 보호경로와 복구 가능한 경로를 우선 적용했습니다.",
     ],
@@ -140,7 +139,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "실제 한글·Office와 운영체제가 필요한 반복업무에 맞는 실행환경을 선택해 해결했습니다.",
     engineering: [
       "Python·PySide6와 COM 자동화를 이용해 서로 다른 Office 애플리케이션의 실행·대기·종료 조건을 조율합니다.",
-      "한글·Office 재시작, 워치독과 오류 격리로 장시간 배치가 실패했을 때의 복구 가능성을 기능에 포함했습니다.",
+      "한글·Office 재시작, 오류 감시 장치과 오류 격리로 장시간 배치가 실패했을 때의 복구 가능성을 기능에 포함했습니다.",
     ],
     evolution:
       "혼합 문서 배치 처리에서 시작해 PDF 병합과 인쇄, 안정화 장치, 안전 정리와 시스템 분석 도구로 확장했습니다.",
@@ -155,7 +154,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "원문 PDF를 페이지 단위로 구조화하는 사실 추출 단계",
       "수치·사실의 단일 원천과 상충 정보를 위한 질문 목록",
       "슬라이드별 주장·근거·출처·시각화·발표자 메모가 있는 스토리보드",
-      "PPTX → PDF·PNG 렌더와 contact sheet 기반 시각 검수",
+      "PPTX → PDF·PNG 렌더와 전체 슬라이드를 한눈에 보는 시트로 시각 검수",
     ],
     decisions: [
       "AI에게 완성본을 한 번에 요청하지 않고 사실, 메시지, 시각화와 검수 단계를 분리했습니다.",
@@ -169,7 +168,7 @@ export const caseStudies: Record<string, CaseStudyDetail> = {
       "핵심 텍스트와 도형은 최종 PPTX에서도 편집 가능한 객체로 유지합니다.",
     ],
     evolution:
-      "원문 요약에서 출발하지 않고 7장 시범본으로 사실과 디자인 규칙을 검증한 뒤, 마스터 덱과 청중별 파생본으로 확장하는 공정을 정립했습니다.",
+      "원문 요약에서 출발하지 않고 7장 시범본으로 사실과 디자인 규칙을 검증한 뒤, 기준 발표자료과 청중별 파생본으로 확장하는 공정을 정립했습니다.",
     related: ["survey-intelligence", "performance-management-system"],
   },
 };

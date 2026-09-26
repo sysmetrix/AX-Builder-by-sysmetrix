@@ -46,7 +46,8 @@ export function HomeIntro({ projectCount }: { projectCount: number }) {
       <div className="cols">
         <p>
           청소년 현장과 사업을 기반으로, 정책·성과·데이터·AX를 연결해
-          실제 업무에 쓰이는 시스템과 도구를 만듭니다.
+          실제 업무에 쓰이는 시스템과 도구를 만듭니다. 현장에서 시작해 정책과 성과,
+          그리고 데이터와 AX로 일의 범위를 넓혀 왔습니다.
         </p>
         <p>
           <Link className="primary-cta" href="#work">
