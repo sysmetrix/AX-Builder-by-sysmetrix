@@ -16,6 +16,7 @@ function clean(value: string | null, fallback: string, maxLength: number) {
 export async function GET(request: NextRequest) {
   const title = clean(request.nextUrl.searchParams.get("title"), "I build systems for better public work.", 84);
   const eyebrow = clean(request.nextUrl.searchParams.get("eyebrow"), "AX Builder by sysmetrix", 64);
+  const brandName = eyebrow.toLowerCase().includes("youth worker") ? "Youth Worker by sysmetrix" : "AX Builder by sysmetrix";
   return new ImageResponse(
     (
       <div
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", width: "100%", fontSize: 28, color: "#a8a59c" }}>
-          <span>{eyebrow}</span><span>AX Builder by sysmetrix</span>
+          <span>{eyebrow}</span><span>{brandName}</span>
         </div>
       </div>
     ),

@@ -1,6 +1,7 @@
-import { caseStudyProjects } from "./catalog";
+import { caseStudyProjects, youthCaseStudyProjects } from "./catalog";
 
 export const siteName = "AX Builder by sysmetrix";
+export const youthSiteName = "Youth Worker by sysmetrix";
 export const siteDescription =
   "청소년 현장과 사업을 출발점으로 정책·성과·데이터·AX를 연결해, 실제 업무에 쓰이는 시스템과 도구를 만듭니다. I build systems for better public work.";
 
@@ -40,7 +41,8 @@ export function canonical(path: string) {
 /** Public, indexable routes. /brand is dev-only and deliberately absent. */
 export function publicRoutes(): string[] {
   const work = caseStudyProjects.map((p) => `/work/${p.slug}`);
-  return ["/", "/work", "/about", "/lab", ...work];
+  const youthWork = youthCaseStudyProjects.map((p) => `/youth/work/${p.slug}`);
+  return ["/", "/work", "/about", "/lab", ...work, "/youth", "/youth/work", "/youth/about", ...youthWork];
 }
 
 /** Route-aware social card. Attached only after the explicit indexing opt-in. */

@@ -34,6 +34,12 @@ export function publicProjectsByCategory(category: ProjectCategory): Project[] {
 export const selectedProjects: Project[] = publicProjectsByCategory("selected-work");
 export const homeLeadProjects: Project[] = selectedProjects.filter((p) => p.homePresentation === "lead");
 export const homeCompactProjects: Project[] = selectedProjects.filter((p) => p.homePresentation === "compact");
+export const youthFeaturedProjects: Project[] = publicProjects.filter((p) => p.youthPresentation === "featured");
+export const youthRelatedProjects: Project[] = publicProjects.filter((p) => p.youthPresentation === "related");
+export const youthArchiveProjects: Project[] = publicProjects.filter((p) => p.themes.includes("youth-work"));
+export const youthCaseStudyProjects: Project[] = [...youthFeaturedProjects, ...youthRelatedProjects]
+  .filter(hasCaseStudy)
+  .filter((p, i, list) => list.findIndex((candidate) => candidate.slug === p.slug) === i);
 
 /** A project has a case-study page if it is a Selected Work entry or has case-study copy. */
 export function hasCaseStudy(p: Project): boolean {
@@ -79,6 +85,12 @@ export function validateCatalog(): string[] {
     if (p.category !== "selected-work" && p.homePresentation) {
       errors.push(`${p.slug}: homePresentation is only valid for selected-work`);
     }
+    if (p.youthPresentation === "featured" && !p.themes.includes("youth-work")) {
+      errors.push(`${p.slug}: Youth featured projects require the youth-work theme`);
+    }
+    if (p.youthPresentation && p.sourceVisibility === "internal") {
+      errors.push(`${p.slug}: internal projects cannot be curated for Youth Worker`);
+    }
   }
   for (const key of Object.keys(flows)) if (!slugs.has(key)) errors.push(`flows: unknown project slug "${key}"`);
   for (const key of Object.keys(caseStudies)) if (!slugs.has(key)) errors.push(`caseStudies: unknown project slug "${key}"`);
@@ -86,6 +98,8 @@ export function validateCatalog(): string[] {
   if (selectedProjects.length === 0) errors.push("no selected-work project");
   if (homeLeadProjects.length === 0) errors.push("selected-work requires at least one lead Home project");
   if (homeCompactProjects.length === 0) errors.push("selected-work requires at least one compact Home project");
+  if (youthFeaturedProjects.length === 0) errors.push("Youth Worker requires at least one featured project");
+  if (youthRelatedProjects.length === 0) errors.push("Youth Worker requires at least one related project");
   const pageSlugs = new Set(caseStudyProjects.map((p) => p.slug));
   for (const p of selectedProjects) {
     if (!flows[p.slug]) errors.push(`${p.slug}: selected-work requires an entry in lib/flows.ts (headline, steps, audience)`);

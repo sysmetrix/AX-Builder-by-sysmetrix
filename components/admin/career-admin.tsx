@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  PUBLISHABLE, changeWord, diffCareer, emptyCareer, itemLabel, newId, normalizeCareer, publicChanges, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
-  type Career, type CareerItem, type Change, type SectionId,
+  PUBLISHABLE, changeWord, diffCareer, emptyCareer, itemLabel, newId, normalizeCareer, publicChanges, scanPublication, sections, sectionById, summarizeChanges, toPublic,
+  type Career, type CareerItem, type Change, type PublicationFinding, type PublicationRule, type SectionId,
 } from "@/lib/career";
 import { docTitle, toMarkdown, type DocKind } from "@/lib/career-export";
 import {
@@ -12,6 +12,9 @@ import {
 } from "@/lib/github-store";
 
 const TOKEN_KEY = "axb-admin-token";
+const ACTIVITY_KEY = "axb-admin-activity";
+const SESSION_MS = 15 * 60 * 1000;
+const WARNING_MS = 60 * 1000;
 type Tab = SectionId | "settings" | "export" | "history";
 type IconName = "archive" | "arrow-down" | "arrow-up" | "check" | "clock" | "download" | "external" | "file" | "gear" | "lock" | "logout" | "plus" | "save" | "shield" | "trash" | "user";
 
@@ -30,7 +33,7 @@ const sectionDescriptions: Record<SectionId, string> = {
 const utilityTabs: { id: Tab; label: string; description: string; icon: IconName }[] = [
   { id: "export", label: "문서 내보내기", description: "이력서와 경력기술서를 미리 보고 변환합니다.", icon: "file" },
   { id: "history", label: "저장 기록", description: "이전 버전을 비교하고 안전하게 되돌립니다.", icon: "clock" },
-  { id: "settings", label: "보안 설정", description: "공개 전 확인할 주의 단어를 관리합니다.", icon: "gear" },
+  { id: "settings", label: "보안 설정", description: "세션, 저장소 연결과 공개 보호 규칙을 관리합니다.", icon: "gear" },
 ];
 
 function Icon({ name }: { name: IconName }) {
@@ -56,48 +59,103 @@ function Icon({ name }: { name: IconName }) {
 }
 
 function loadToken(): string {
-  try { return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
-}
-function storeToken(token: string, remember: boolean) {
   try {
-    localStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY);
-    if (token) (remember ? localStorage : sessionStorage).setItem(TOKEN_KEY, token);
+    // Earlier versions offered persistent storage. Remove that legacy copy before reading.
+    localStorage.removeItem(TOKEN_KEY);
+    const token = sessionStorage.getItem(TOKEN_KEY) || "";
+    const lastActivity = Number(sessionStorage.getItem(ACTIVITY_KEY) || 0);
+    if (!token || !lastActivity || Date.now() - lastActivity >= SESSION_MS) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(ACTIVITY_KEY);
+      return "";
+    }
+    return token;
+  } catch { return ""; }
+}
+function storeToken(token: string) {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(ACTIVITY_KEY);
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem(ACTIVITY_KEY, String(Date.now()));
+    }
   } catch { /* storage unavailable: token lives only in memory */ }
 }
 
+function touchSession() {
+  try { sessionStorage.setItem(ACTIVITY_KEY, String(Date.now())); } catch { /* memory-only session */ }
+}
+
 export function CareerAdmin() {
+  const lastActivityRef = useRef(Date.now());
   const [token, setToken] = useState("");
   const [draftToken, setDraftToken] = useState("");
-  const [remember, setRemember] = useState(false);
   const [career, setCareer] = useState<Career | null>(null);
   /** The last saved version: the basis for the change summary in the commit message. */
   const [saved, setSaved] = useState<Career | null>(null);
+  const [publicSaved, setPublicSaved] = useState<Career | null>(null);
   const [restoredFrom, setRestoredFrom] = useState("");
-  const [pending, setPending] = useState<{ changes: Change[]; hits: string[] } | null>(null);
+  const [pending, setPending] = useState<{ changes: Change[]; findings: PublicationFinding[] } | null>(null);
   const [sha, setSha] = useState<string | undefined>();
+  const [publicSha, setPublicSha] = useState<string | undefined>();
+  const [publicPending, setPublicPending] = useState(false);
+  const [sessionRemaining, setSessionRemaining] = useState(SESSION_MS);
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState<Tab>("profile");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const connect = useCallback(async (t: string, keep: boolean) => {
+  const clearSession = useCallback((message: string) => {
+    storeToken("");
+    setToken(""); setDraftToken(""); setCareer(null); setSaved(null); setPublicSaved(null);
+    setSha(undefined); setPublicSha(undefined); setPublicPending(false); setPending(null);
+    setRestoredFrom(""); setDirty(false); setSessionRemaining(SESSION_MS); setStatus(message);
+    lastActivityRef.current = Date.now();
+  }, []);
+
+  const connect = useCallback(async (t: string) => {
     setBusy(true); setStatus("연결 중…");
     try {
       const login = await whoAmI(t);
       if (login.toLowerCase() !== OWNER.toLowerCase()) throw new Error(`이 관리 화면은 ${OWNER} 계정 전용입니다.`);
       const file = await readFile(t, PRIVATE_REPO, PRIVATE_PATH);
+      let publicFile: Awaited<ReturnType<typeof readFile>> = null;
+      let publicReadError = "";
+      try { publicFile = await readFile(t, PUBLIC_REPO, PUBLIC_PATH); }
+      catch (error) { publicReadError = (error as Error).message; }
       const loaded = file ? normalizeCareer(JSON.parse(file.text)) : emptyCareer();
+      const loadedPublic = publicFile ? normalizeCareer(JSON.parse(publicFile.text)) : emptyCareer();
       setCareer(loaded); setSaved(loaded); setRestoredFrom("");
-      setSha(file?.sha);
-      setToken(t); storeToken(t, keep); setDirty(false);
-      setStatus(file ? "불러왔습니다." : "저장된 이력이 없습니다. 입력 후 저장하면 새로 만들어집니다.");
+      setPublicSaved(loadedPublic); setSha(file?.sha); setPublicSha(publicFile?.sha);
+      setPublicPending(Boolean(publicReadError) || publicChanges(loadedPublic, loaded).length > 0);
+      setToken(t); storeToken(t); lastActivityRef.current = Date.now(); setSessionRemaining(SESSION_MS); setDirty(false);
+      setStatus(publicReadError ? `비공개 이력을 불러왔습니다. 공개 저장소는 확인하지 못했습니다: ${publicReadError}` : file ? "불러왔습니다." : "저장된 이력이 없습니다. 입력 후 저장하면 새로 만들어집니다.");
     } catch (e) {
       setStatus((e as Error).message);
-      storeToken("", false);
+      storeToken("");
     } finally { setBusy(false); }
   }, []);
 
-  useEffect(() => { const t = loadToken(); if (t) void connect(t, !!localStorage.getItem(TOKEN_KEY)); }, [connect]);
+  useEffect(() => { const t = loadToken(); if (t) void connect(t); }, [connect]);
+
+  useEffect(() => {
+    if (!token) return;
+    const activity = () => { lastActivityRef.current = Date.now(); touchSession(); setSessionRemaining(SESSION_MS); };
+    const timer = window.setInterval(() => {
+      let last = lastActivityRef.current;
+      try { last = Number(sessionStorage.getItem(ACTIVITY_KEY) || last); } catch { /* use in-memory timestamp */ }
+      const remaining = Math.max(0, SESSION_MS - (Date.now() - last));
+      setSessionRemaining(remaining);
+      if (remaining === 0) clearSession("15분 동안 활동이 없어 자동으로 잠겼습니다. 토큰과 화면의 비공개 데이터를 지웠습니다.");
+    }, 1000);
+    for (const event of ["pointerdown", "keydown", "touchstart"] as const) window.addEventListener(event, activity, { passive: true });
+    return () => {
+      window.clearInterval(timer);
+      for (const event of ["pointerdown", "keydown", "touchstart"] as const) window.removeEventListener(event, activity);
+    };
+  }, [clearSession, token]);
 
   useEffect(() => {
     if (!dirty) return;
@@ -114,36 +172,61 @@ export function CareerAdmin() {
   /** Saving that changes the public site first asks for confirmation (see PublishConfirm). */
   const save = () => {
     if (!career || !token) return;
-    const changes = publicChanges(saved ?? emptyCareer(), career);
-    if (changes.length) setPending({ changes, hits: sensitiveHits(career) });
-    else void doSave();
+    const changes = publicChanges(publicSaved ?? emptyCareer(), career);
+    if (changes.length) setPending({ changes, findings: scanPublication(career) });
+    else void doSave(false);
   };
 
-  const doSave = async () => {
+  const doSave = async (syncPublic: boolean) => {
     if (!career || !token) return;
     setPending(null);
     setBusy(true); setStatus("저장 중…");
+    let next = career;
+    let privateSaved = !dirty;
     try {
-      const next = { ...career, updatedAt: new Date().toISOString() };
-      const summary = summarizeChanges(saved ? diffCareer(saved, next) : []);
-      const message = restoredFrom ? `career: ${restoredFrom} 버전으로 되돌림 (${summary})` : `career: ${summary}`;
-      const newSha = await writeFile(token, PRIVATE_REPO, PRIVATE_PATH, JSON.stringify(next, null, 2) + "\n", sha, message);
-      setSha(newSha); setCareer(next); setSaved(next); setRestoredFrom(""); setDirty(false);
-      const publicText = JSON.stringify(toPublic(next), null, 2) + "\n";
-      const current = await readFile(token, PUBLIC_REPO, PUBLIC_PATH);
-      const strip = (t: string) => t.replace(/"updatedAt": "[^"]*",?\n\s*/g, "");
-      if (current && strip(current.text) === strip(publicText)) {
-        setStatus("저장했습니다. 공개 항목은 바뀌지 않아 사이트는 그대로입니다.");
-      } else {
-        await writeFile(token, PUBLIC_REPO, PUBLIC_PATH, publicText, current?.sha, "career: update public profile");
-        setStatus("저장했습니다. 공개 항목이 바뀌어 사이트가 1~2분 뒤 다시 배포됩니다.");
+      if (dirty) {
+        next = { ...career, updatedAt: new Date().toISOString() };
+        const summary = summarizeChanges(saved ? diffCareer(saved, next) : []);
+        const message = restoredFrom ? `career: ${restoredFrom} 버전으로 되돌림 (${summary})` : `career: ${summary}`;
+        const newSha = await writeFile(token, PRIVATE_REPO, PRIVATE_PATH, JSON.stringify(next, null, 2) + "\n", sha, message);
+        setSha(newSha); setCareer(next); setSaved(next); setRestoredFrom(""); setDirty(false);
+        privateSaved = true;
       }
-    } catch (e) { setStatus((e as Error).message); } finally { setBusy(false); }
+
+      const changes = publicChanges(publicSaved ?? emptyCareer(), next);
+      if (!changes.length) {
+        setPublicPending(false);
+        setStatus("비공개 이력을 저장했습니다. 공개 사이트 내용은 그대로입니다.");
+        return;
+      }
+      if (!syncPublic) {
+        setPublicPending(true);
+        setStatus("비공개 이력은 저장했습니다. 공개 사이트 동기화는 보류 중입니다.");
+        return;
+      }
+      const findings = scanPublication(next);
+      if (findings.some((finding) => finding.severity === "block")) {
+        setPublicPending(true);
+        setStatus("비공개 이력은 저장했습니다. 필수 보안 규칙 때문에 공개 동기화는 차단했습니다.");
+        return;
+      }
+
+      const publicText = JSON.stringify(toPublic(next), null, 2) + "\n";
+      const newPublicSha = await writeFile(token, PUBLIC_REPO, PUBLIC_PATH, publicText, publicSha, "career: update public profile");
+      setPublicSha(newPublicSha); setPublicSaved(normalizeCareer(toPublic(next))); setPublicPending(false);
+      setStatus("비공개 이력을 저장하고 공개 프로필을 동기화했습니다. 사이트는 1~2분 뒤 갱신됩니다.");
+    } catch (e) {
+      if (!privateSaved) setStatus(`비공개 이력을 저장하지 못했습니다: ${(e as Error).message}`);
+      else {
+        setPublicPending(true);
+        setStatus(`비공개 이력은 안전합니다. 공개 동기화에 실패했습니다: ${(e as Error).message}`);
+      }
+    } finally { setBusy(false); }
   };
 
   const logout = () => {
     if (dirty && !window.confirm("저장하지 않은 변경이 있습니다. 나갈까요?")) return;
-    storeToken("", false); setToken(""); setCareer(null); setDraftToken(""); setStatus("로그아웃했습니다. 이 기기에서 토큰을 지웠습니다.");
+    clearSession("로그아웃했습니다. 이 기기에서 토큰과 비공개 화면 데이터를 지웠습니다.");
   };
 
   if (!token || !career) {
@@ -167,15 +250,12 @@ export function CareerAdmin() {
               <h2>내 작업공간 연결</h2>
             </div>
           </div>
-          <form onSubmit={(e) => { e.preventDefault(); if (draftToken.trim()) void connect(draftToken.trim(), remember); }}>
+          <form onSubmit={(e) => { e.preventDefault(); if (draftToken.trim()) void connect(draftToken.trim()); }}>
             <label className="admin-field">
               <span className="admin-label">GitHub Fine-grained token</span>
               <span className="admin-input-wrap"><Icon name="lock" /><input type="password" autoComplete="off" spellCheck={false} value={draftToken} placeholder="github_pat_…" onChange={(e) => setDraftToken(e.target.value)} /></span>
             </label>
-            <label className="admin-check">
-              <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-              <span>이 기기에서 기억하기 <small>개인 기기에서만 사용</small></span>
-            </label>
+            <p className="admin-session-copy"><Icon name="clock" /> 토큰은 이 탭의 세션에만 보관되며, 15분간 활동이 없으면 자동으로 삭제됩니다.</p>
             <button className="admin-btn primary admin-login-submit" disabled={busy || !draftToken.trim()}>
               {busy ? <span className="admin-spinner" /> : <Icon name="arrow-up" />}
               {busy ? "연결하는 중" : "안전하게 연결"}
@@ -252,7 +332,13 @@ export function CareerAdmin() {
 
         <div className="admin-content">
           {status && <p className="admin-status" role="status">{status}</p>}
-          {pending && <PublishConfirm {...pending} onConfirm={() => void doSave()} onCancel={() => setPending(null)} />}
+          {sessionRemaining <= WARNING_MS && (
+            <div className="admin-notice session" role="alert"><Icon name="clock" /><span><b>곧 자동으로 잠깁니다.</b> {Math.max(1, Math.ceil(sessionRemaining / 1000))}초 안에 계속 사용을 눌러 세션을 연장하세요.</span><button className="admin-btn" onClick={() => { lastActivityRef.current = Date.now(); touchSession(); setSessionRemaining(SESSION_MS); }}>계속 사용</button></div>
+          )}
+          {publicPending && (
+            <div className="admin-notice publish-pending" role="status"><Icon name="shield" /><span><b>공개 동기화 대기 중</b> 비공개 저장은 완료됐지만 공개 프로필은 아직 이전 버전입니다.</span><button className="admin-btn" onClick={save} disabled={busy}>검토하고 재시도</button></div>
+          )}
+          {pending && <PublishConfirm {...pending} onConfirm={() => void doSave(true)} onPrivate={() => void doSave(false)} onCancel={() => setPending(null)} />}
           {restoredFrom && (
             <div className="admin-notice restore" role="status"><Icon name="clock" /><span><b>{restoredFrom} 버전을 불러왔습니다.</b> 내용을 확인하고 저장하면 되돌리기가 완료됩니다. 저장 전에는 아무것도 바뀌지 않습니다.</span></div>
           )}
@@ -273,7 +359,7 @@ export function CareerAdmin() {
                 dirty={dirty}
                 onRestore={(version, label) => { setCareer(version); setDirty(true); setRestoredFrom(label); setTab("profile"); }}
               />
-            ) : tab === "settings" ? <Settings career={career} update={update} />
+            ) : tab === "settings" ? <Settings career={career} update={update} sessionRemaining={sessionRemaining} publicPending={publicPending} onLock={() => clearSession("작업공간을 잠갔습니다. 토큰과 비공개 화면 데이터를 지웠습니다.")} />
               : tab === "export" ? <Export career={career} />
               : <SectionEditor id={tab} career={career} update={update} />}
           </div>
@@ -288,12 +374,17 @@ const publicWord: Record<Change["kind"], string> = {
 };
 
 /** Shown before any save that changes what the public site shows. */
-function PublishConfirm({ changes, hits, onConfirm, onCancel }: {
-  changes: Change[]; hits: string[]; onConfirm: () => void; onCancel: () => void;
+function PublishConfirm({ changes, findings, onConfirm, onPrivate, onCancel }: {
+  changes: Change[]; findings: PublicationFinding[]; onConfirm: () => void; onPrivate: () => void; onCancel: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [phrase, setPhrase] = useState("");
   useEffect(() => { ref.current?.showModal(); }, []);
   const goesOut = changes.some((c) => c.kind === "added" || c.kind === "changed" || c.kind === "published");
+  const blockers = findings.filter((finding) => finding.severity === "block");
+  const warnings = findings.filter((finding) => finding.severity === "warn");
+  const needsPhrase = warnings.length > 0;
+  const canPublish = blockers.length === 0 && (!needsPhrase || phrase === "공개");
 
   return (
     <dialog ref={ref} className="builder-log publish-confirm" aria-labelledby="publish-title" onCancel={(e) => { e.preventDefault(); onCancel(); }}>
@@ -308,8 +399,18 @@ function PublishConfirm({ changes, hits, onConfirm, onCancel }: {
             </li>
           ))}
         </ul>
-        {hits.length > 0 && (
-          <p className="admin-status publish-warn">공개 항목에 주의 단어가 있습니다: <b>{hits.join(", ")}</b></p>
+        {findings.length > 0 && (
+          <div className="admin-findings" role={blockers.length ? "alert" : "status"}>
+            <p><b>{blockers.length ? "공개할 수 없는 정보가 있습니다." : "사용자 주의 규칙이 감지됐습니다."}</b> 값은 마스킹해 표시합니다.</p>
+            <ul>
+              {findings.map((finding, index) => (
+                <li key={`${finding.ruleId}-${finding.itemId}-${finding.field}-${index}`}>
+                  <span className={`admin-kind ${finding.severity}`}>{finding.severity === "block" ? "차단" : "주의"}</span>
+                  <span><b>{finding.label}</b><small>{sectionById[finding.section].label} · {finding.preview}</small></span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <div className="publish-note">
           {goesOut && <p>저장하면 1~2분 뒤 누구나 볼 수 있는 사이트에 나타납니다.</p>}
@@ -318,9 +419,16 @@ function PublishConfirm({ changes, hits, onConfirm, onCancel }: {
             GitHub의 과거 기록에서는 계속 볼 수 있습니다.
           </p>
         </div>
+        {needsPhrase && blockers.length === 0 && (
+          <label className="admin-field publish-phrase">
+            <span className="admin-label">내용을 확인했다면 <b>공개</b>를 입력하세요.</span>
+            <input value={phrase} onChange={(event) => setPhrase(event.target.value)} autoComplete="off" />
+          </label>
+        )}
         <div className="builder-foot">
           <button type="button" className="admin-btn" onClick={onCancel} autoFocus>취소</button>
-          <button type="button" className="admin-btn primary" onClick={onConfirm}>확인하고 저장</button>
+          <button type="button" className="admin-btn" onClick={onPrivate}>비공개만 저장</button>
+          <button type="button" className="admin-btn primary" onClick={onConfirm} disabled={!canPublish}>{blockers.length ? "보안 규칙으로 차단됨" : "확인하고 공개 동기화"}</button>
         </div>
       </div>
     </dialog>
@@ -496,17 +604,48 @@ function SectionEditor({ id, career, update }: { id: SectionId; career: Career; 
   );
 }
 
-function Settings({ career, update }: { career: Career; update: (fn: (c: Career) => void) => void }) {
-  const terms = (career.settings?.sensitiveTerms ?? []).join("\n");
+function Settings({ career, update, sessionRemaining, publicPending, onLock }: {
+  career: Career;
+  update: (fn: (c: Career) => void) => void;
+  sessionRemaining: number;
+  publicPending: boolean;
+  onLock: () => void;
+}) {
+  const [term, setTerm] = useState("");
+  const [action, setAction] = useState<PublicationRule["action"]>("warn");
+  const rules = career.settings?.publicationRules ?? [];
+  const setRules = (next: PublicationRule[]) => update((c) => { c.settings = { publicationRules: next }; });
+  const addRule = () => {
+    const clean = term.trim();
+    if (!clean) return;
+    setRules([...rules, { id: newId(), term: clean, action, enabled: true }]);
+    setTerm("");
+  };
+  const remaining = `${String(Math.floor(sessionRemaining / 60000)).padStart(2, "0")}:${String(Math.ceil((sessionRemaining % 60000) / 1000)).padStart(2, "0")}`;
   return (
     <div className="admin-section">
-      <div className="admin-notice private"><Icon name="shield" /><span><b>공개 전 마지막 안전장치</b> 기본 정보에 아래 단어가 포함되면 저장 직전 경고합니다. 단어 목록도 비공개로 보관됩니다.</span></div>
-      <div className="admin-tool-card">
-        <label className="admin-field wide">
-          <span className="admin-label">주의 단어 <small>줄마다 하나씩 입력</small></span>
-          <textarea rows={8} value={terms} placeholder={"기관명\n부서명\n내부 프로젝트명"} onChange={(e) => update((c) => { c.settings = { sensitiveTerms: e.target.value.split("\n").map((t) => t.trim()).filter(Boolean) }; })} />
-        </label>
-        <div className="admin-tool-meta"><span>등록된 단어 <b>{career.settings?.sensitiveTerms?.length ?? 0}</b></span><span>마지막 저장 <b>{career.updatedAt ? new Date(career.updatedAt).toLocaleString("ko-KR") : "없음"}</b></span></div>
+      <div className="admin-security-grid">
+        <article className="admin-security-card"><Icon name="clock" /><span><small>SESSION</small><b>{remaining}</b><em>15분 비활동 시 자동 잠금</em></span><button className="admin-btn" onClick={onLock}>지금 잠그기</button></article>
+        <article className="admin-security-card"><Icon name="user" /><span><small>GITHUB ACCOUNT</small><b>{OWNER}</b><em>계정과 저장소 읽기 확인됨</em></span></article>
+        <article className="admin-security-card"><Icon name="archive" /><span><small>PRIVATE STORE</small><b>{PRIVATE_REPO}</b><em>쓰기는 저장할 때 검증</em></span></article>
+        <article className={`admin-security-card${publicPending ? " attention" : ""}`}><Icon name="shield" /><span><small>PUBLIC SYNC</small><b>{publicPending ? "동기화 대기" : "최신 상태"}</b><em>{PUBLIC_REPO} · 기본 정보만</em></span></article>
+      </div>
+      <div className="admin-notice private"><Icon name="shield" /><span><b>기본 보호 규칙은 끌 수 없습니다.</b> 이메일, 전화번호, 접근 토큰·API 키, 사설 IP, 로컬·내부 URL이 공개 필드에 있으면 동기화를 차단합니다.</span></div>
+      <div className="admin-tool-card admin-rule-card">
+        <div className="admin-rule-head"><div><p className="mono">CUSTOM PUBLICATION RULES</p><h3>내 공개 규칙</h3><p>기관명이나 내부 프로젝트명처럼 나만 아는 민감어를 추가하세요. 규칙 목록은 비공개 저장소에만 남습니다.</p></div><span>{rules.length} rules</span></div>
+        <div className="admin-rule-compose">
+          <label className="admin-field"><span className="admin-label">감지할 단어</span><input value={term} placeholder="기관명 또는 내부 용어" onChange={(event) => setTerm(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addRule(); } }} /></label>
+          <label className="admin-field"><span className="admin-label">동작</span><select value={action} onChange={(event) => setAction(event.target.value as PublicationRule["action"])}><option value="warn">주의 후 확인</option><option value="block">공개 차단</option></select></label>
+          <button className="admin-btn primary" onClick={addRule} disabled={!term.trim()}><Icon name="plus" />규칙 추가</button>
+        </div>
+        {rules.length ? <ul className="admin-rules">{rules.map((rule) => (
+          <li key={rule.id}>
+            <label className="admin-switch"><input type="checkbox" checked={rule.enabled} onChange={(event) => setRules(rules.map((item) => item.id === rule.id ? { ...item, enabled: event.target.checked } : item))} /><span className="admin-switch-track"><span /></span><span><b>{rule.term}</b><small>{rule.enabled ? "사용 중" : "꺼짐"}</small></span></label>
+            <select aria-label={`${rule.term} 동작`} value={rule.action} onChange={(event) => setRules(rules.map((item) => item.id === rule.id ? { ...item, action: event.target.value as PublicationRule["action"] } : item))}><option value="warn">주의</option><option value="block">차단</option></select>
+            <button className="admin-icon-btn danger" aria-label={`${rule.term} 규칙 삭제`} onClick={() => setRules(rules.filter((item) => item.id !== rule.id))}><Icon name="trash" /></button>
+          </li>
+        ))}</ul> : <div className="admin-rule-empty">추가한 규칙이 없습니다. 기본 차단 규칙은 항상 작동합니다.</div>}
+        <div className="admin-tool-meta"><span>마지막 저장 <b>{career.updatedAt ? new Date(career.updatedAt).toLocaleString("ko-KR") : "없음"}</b></span><span>토큰 저장 <b>sessionStorage only</b></span></div>
       </div>
     </div>
   );

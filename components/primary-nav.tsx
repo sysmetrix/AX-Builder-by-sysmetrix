@@ -10,12 +10,12 @@ export interface NavItem {
 }
 
 export function isCurrentNav(pathname: string, href: string): boolean {
-  if (href === "/work") return pathname === "/work" || pathname.startsWith("/work/");
   if (href.includes("#")) return false;
+  if (href.endsWith("/work") || href === "/work") return pathname === href || pathname.startsWith(`${href}/`);
   return pathname === href;
 }
 
-export function PrimaryNav({ items }: { items: NavItem[] }) {
+export function PrimaryNav({ items, brandSwitch }: { items: NavItem[]; brandSwitch?: NavItem }) {
   const pathname = usePathname();
   return (
     <nav className="nav-desktop" aria-label="주요 메뉴">
@@ -24,6 +24,7 @@ export function PrimaryNav({ items }: { items: NavItem[] }) {
           {item.label}
         </Link>
       ))}
+      {brandSwitch && <Link className="brand-mode-link" href={brandSwitch.href}>{brandSwitch.label}</Link>}
       <ThemeToggle />
     </nav>
   );

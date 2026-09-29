@@ -11,7 +11,7 @@ import { isCurrentNav } from "./primary-nav";
  * While open: page content is inert (no tab stops behind the sheet), body scroll is locked,
  * Esc closes and returns focus to the button, and the sheet closes when the viewport widens.
  */
-export function MobileMenu({ items }: { items: { href: string; label: string }[] }) {
+export function MobileMenu({ items, brandSwitch }: { items: { href: string; label: string }[]; brandSwitch?: { href: string; label: string } }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
@@ -65,7 +65,7 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
             ))}
           </nav>
           <div className="menu-row">
-            <span className="mono">Theme</span>
+            {brandSwitch && <Link className="brand-mode-link" href={brandSwitch.href} onClick={() => setOpen(false)}>↔ {brandSwitch.label}</Link>}
             <ThemeToggle />
           </div>
         </div>

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Flow, visibilityLabel } from "@/components/project-parts";
 import { caseStudies } from "@/lib/case-studies";
 import { flows } from "@/lib/flows";
-import { caseStudyProjects, selectedProjects, themeLabels } from "@/lib/catalog";
+import { caseStudyProjects, selectedProjects, themeLabels, youthCaseStudyProjects } from "@/lib/catalog";
 import { publication } from "@/lib/publication";
 import { canonical, ogImagesFor, publicUrl, siteName } from "@/lib/site";
 
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function CaseStudy({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CaseStudy({ params, youth = false }: { params: Promise<{ slug: string }>; youth?: boolean }) {
   const { slug } = await params;
   const idx = caseStudyProjects.findIndex((p) => p.slug === slug);
   if (idx < 0) notFound();
@@ -46,7 +46,10 @@ export default async function CaseStudy({ params }: { params: Promise<{ slug: st
   const related = (detail?.related ?? [])
     .map((relatedSlug) => caseStudyProjects.find((candidate) => candidate.slug === relatedSlug))
     .filter((candidate): candidate is (typeof caseStudyProjects)[number] => Boolean(candidate));
-  const next = caseStudyProjects[(idx + 1) % caseStudyProjects.length];
+  const sequence = youth ? youthCaseStudyProjects : caseStudyProjects;
+  const sequenceIdx = sequence.findIndex((item) => item.slug === slug);
+  const next = sequence[(sequenceIdx + 1) % sequence.length];
+  const workBase = youth ? "/youth/work" : "/work";
   const isPublic = p.sourceVisibility === "public";
   const links = [
     isPublic && p.repoUrl && publication.allows(slug, "source") ? { href: p.repoUrl, label: "GitHub" } : null,
@@ -76,8 +79,8 @@ export default async function CaseStudy({ params }: { params: Promise<{ slug: st
         />
       )}
       <section className="case-hero">
-        <Link className="mono-ko crumb" href={selectedIdx >= 0 ? "/#work" : "/work"}>
-          {selectedIdx >= 0
+        <Link className="mono-ko crumb" href={youth ? "/youth/work" : selectedIdx >= 0 ? "/#work" : "/work"}>
+          {youth ? "← 청소년 사업·활동" : selectedIdx >= 0
             ? `← 대표 작업 · 사례 ${String(selectedIdx + 1).padStart(2, "0")} / ${String(selectedProjects.length).padStart(2, "0")}`
             : "← 전체 작업"}
         </Link>
@@ -189,7 +192,7 @@ export default async function CaseStudy({ params }: { params: Promise<{ slug: st
           <ul className="related-list">
             {related.map((item) => (
               <li key={item.slug}>
-                <Link href={`/work/${item.slug}`}>
+                <Link href={`${workBase}/${item.slug}`}>
                   <strong>{item.title}</strong>
                   <span>{item.oneLiner}</span>
                 </Link>
@@ -198,7 +201,7 @@ export default async function CaseStudy({ params }: { params: Promise<{ slug: st
           </ul>
         </section>
       )}
-      <Link className="next" href={`/work/${next.slug}`}>
+      <Link className="next" href={`${workBase}/${next.slug}`}>
         <span className="mono-ko">다음 사례</span>
         <p className="lead-ko">{next.title} →</p>
       </Link>

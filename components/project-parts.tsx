@@ -24,7 +24,7 @@ export function Flow({ slug, id }: { slug: string; id?: string }) {
 }
 
 /** Selected Work card: outcome-first title → Problem / System / Change / Engineering. */
-export function ProjectFeature({ project, index, total }: { project: Project; index: number; total: number }) {
+export function ProjectFeature({ project, index, total, hrefPrefix = "/work" }: { project: Project; index: number; total: number; hrefPrefix?: string }) {
   const flow = flows[project.slug];
   return (
     <article className="feature">
@@ -38,7 +38,7 @@ export function ProjectFeature({ project, index, total }: { project: Project; in
       <div className="feature-grid">
         <div className="feature-copy">
           <h3>
-            <Link href={`/work/${project.slug}`} className="feature-link">
+            <Link href={`${hrefPrefix}/${project.slug}`} className="feature-link">
               <span>{flow?.headline ?? project.oneLiner}</span>
               <span className="sr-only"> — {project.title} 사례 읽기</span>
             </Link>
@@ -68,7 +68,7 @@ export function ProjectFeature({ project, index, total }: { project: Project; in
 }
 
 /** A lower-density Selected Work entry used only on Home; the full case study remains one click away. */
-export function ProjectCompact({ project }: { project: Project }) {
+export function ProjectCompact({ project, hrefPrefix = "/work" }: { project: Project; hrefPrefix?: string }) {
   const flow = flows[project.slug];
   const themes = themeLabels(project).join(" · ");
   return (
@@ -78,7 +78,7 @@ export function ProjectCompact({ project }: { project: Project }) {
         <span>{themes}</span>
       </div>
       <h3>
-        <Link href={`/work/${project.slug}`} className="compact-link">
+        <Link href={`${hrefPrefix}/${project.slug}`} className="compact-link">
           {flow?.headline ?? project.oneLiner}
           <span className="sr-only"> — {project.title} 사례 읽기</span>
         </Link>
@@ -89,13 +89,13 @@ export function ProjectCompact({ project }: { project: Project }) {
   );
 }
 
-export function ProjectRow({ project }: { project: Project }) {
+export function ProjectRow({ project, hrefPrefix = "/work" }: { project: Project; hrefPrefix?: string }) {
   const themes = themeLabels(project).join(" · ");
   const caseAvailable = hasCaseStudy(project);
   return (
     <li className="row-item">
       <div>
-        <h3>{caseAvailable ? <Link href={`/work/${project.slug}`}>{project.title}</Link> : project.title}</h3>
+        <h3>{caseAvailable ? <Link href={`${hrefPrefix}/${project.slug}`}>{project.title}</Link> : project.title}</h3>
         <p className="mono-ko">{themes || categoryLabel(project.category)}</p>
       </div>
       <div>

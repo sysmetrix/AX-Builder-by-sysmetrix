@@ -9,6 +9,7 @@ export type ProjectCategory =
 
 export type SourceVisibility = "public" | "private" | "internal" | "history";
 export type HomePresentation = "lead" | "compact";
+export type YouthPresentation = "featured" | "related";
 
 export interface ProjectScreen {
   src: string;
@@ -26,6 +27,8 @@ export interface Project {
   category: ProjectCategory;
   /** Required for Selected Work: controls only the hierarchy of its Home presentation. */
   homePresentation?: HomePresentation;
+  /** Explicit Youth Worker curation. Featured requires the youth-work theme; related is supporting work. */
+  youthPresentation?: YouthPresentation;
   /** Domain axis (multi-valued, may be empty). See lib/themes.ts. */
   themes: ThemeId[];
   /** Name used inside the organisation, shown only as a small label on the detail page (never as the main title). */
@@ -55,6 +58,7 @@ export const projects: Project[] = [
     year: "2026",
     category: "selected-work",
     homePresentation: "lead",
+    youthPresentation: "related",
     themes: ["performance", "strategy"],
     sourceVisibility: "private",
     status: "Live",
@@ -77,6 +81,7 @@ export const projects: Project[] = [
     year: "2026",
     category: "selected-work",
     homePresentation: "lead",
+    youthPresentation: "featured",
     themes: ["youth-work", "data-evaluation", "performance", "document-engineering"],
     sourceVisibility: "public",
     status: "Live",
@@ -124,6 +129,7 @@ export const projects: Project[] = [
     year: "2026",
     category: "selected-work",
     homePresentation: "lead",
+    youthPresentation: "related",
     themes: ["document-engineering", "ax-automation"],
     sourceVisibility: "public",
     status: "Live",
@@ -230,6 +236,7 @@ export const projects: Project[] = [
     year: "2026",
     category: "selected-work",
     homePresentation: "compact",
+    youthPresentation: "related",
     themes: ["strategy", "ax-automation", "document-engineering"],
     sourceVisibility: "private",
     status: "Active",
@@ -252,6 +259,7 @@ export const projects: Project[] = [
     eyebrow: "Data & Research",
     year: "2026",
     category: "data-research",
+    youthPresentation: "featured",
     themes: ["youth-work", "policy", "data-evaluation", "strategy"],
     sourceVisibility: "private",
     status: "Completed",
@@ -268,6 +276,7 @@ export const projects: Project[] = [
     eyebrow: "Data & Research",
     year: "2026",
     category: "data-research",
+    youthPresentation: "featured",
     themes: ["youth-work", "data-evaluation", "performance"],
     sourceVisibility: "private",
     status: "Completed",

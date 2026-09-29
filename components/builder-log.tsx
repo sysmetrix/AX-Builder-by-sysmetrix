@@ -13,7 +13,7 @@ export interface BuilderLogStats {
  * Easter egg: type "a" then "x" anywhere (outside form fields), or tap the footer name five times.
  * Shows public project stats only (no personal career data), and a quiet entrance to the owner's editor.
  */
-export function BuilderLog({ identity, stats }: { identity: string; stats: BuilderLogStats }) {
+export function BuilderLog({ identity, stats, brandName = "AX Builder" }: { identity: string; stats: BuilderLogStats; brandName?: string }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [taps, setTaps] = useState<number[]>([]);
 
@@ -42,7 +42,7 @@ export function BuilderLog({ identity, stats }: { identity: string; stats: Build
   return (
     <>
       <button type="button" className="brand-name foot-brand" onClick={tap}>
-        AX Builder <small>by sysmetrix</small>
+        {brandName} <small>by sysmetrix</small>
       </button>
       <dialog ref={ref} className="builder-log" aria-labelledby="builder-log-title" onClick={(e) => { if (e.target === ref.current) ref.current?.close(); }}>
         <div className="builder-log-body">

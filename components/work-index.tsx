@@ -62,6 +62,7 @@ export function WorkIndex({ groups, filters }: { groups: WorkGroup[]; filters: W
 
   const matches = (item: WorkItem, groupKey: string) =>
     active === "all" ||
+    active === groupKey ||
     (active === SELECTED_FILTER ? groupKey === SELECTED_GROUP : item.themes.includes(active));
 
   const visible = groups.map((g) => ({ ...g, items: g.items.filter((it) => matches(it, g.key)) }));

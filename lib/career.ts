@@ -27,7 +27,25 @@ export interface Career {
   updatedAt?: string;
   sections: Record<SectionId, CareerItem[]>;
   /** Private only: words that trigger a warning when they appear in public items. */
-  settings?: { sensitiveTerms?: string[] };
+  settings?: CareerSettings;
+}
+
+export type PublicationRuleAction = "warn" | "block";
+export interface PublicationRule { id: string; term: string; action: PublicationRuleAction; enabled: boolean }
+export interface CareerSettings {
+  /** Legacy v1 input, accepted during normalization and converted to publicationRules. */
+  sensitiveTerms?: string[];
+  publicationRules?: PublicationRule[];
+}
+export interface PublicationFinding {
+  ruleId: string;
+  severity: PublicationRuleAction;
+  label: string;
+  section: SectionId;
+  itemId: string;
+  field: string;
+  preview: string;
+  builtIn: boolean;
 }
 
 export type PublicCareer = Omit<Career, "settings">;
@@ -95,7 +113,7 @@ export function emptyCareer(): Career {
   return {
     version: 1,
     sections: Object.fromEntries(sections.map((s) => [s.id, []])) as unknown as Career["sections"],
-    settings: { sensitiveTerms: [] },
+    settings: { publicationRules: [] },
   };
 }
 
@@ -109,7 +127,18 @@ export function normalizeCareer(raw: unknown): Career {
     if (Array.isArray(list)) base.sections[s.id] = list.filter((x) => x && typeof x === "object") as CareerItem[];
   }
   base.updatedAt = typeof r.updatedAt === "string" ? r.updatedAt : undefined;
-  base.settings = { sensitiveTerms: Array.isArray(r.settings?.sensitiveTerms) ? r.settings!.sensitiveTerms!.filter((t) => typeof t === "string") : [] };
+  const rules = Array.isArray(r.settings?.publicationRules)
+    ? r.settings.publicationRules.filter((rule): rule is PublicationRule => Boolean(
+        rule && typeof rule.id === "string" && typeof rule.term === "string" &&
+        (rule.action === "warn" || rule.action === "block") && typeof rule.enabled === "boolean",
+      ))
+    : [];
+  const legacy = Array.isArray(r.settings?.sensitiveTerms)
+    ? r.settings.sensitiveTerms.filter((term): term is string => typeof term === "string" && Boolean(term.trim()))
+    : [];
+  base.settings = {
+    publicationRules: rules.length > 0 ? rules : legacy.map((term, i) => ({ id: `legacy-${i}`, term: term.trim(), action: "warn", enabled: true })),
+  };
   return base;
 }
 
@@ -137,9 +166,48 @@ export function toPublic(career: Career): PublicCareer {
 }
 
 /** Terms from the private settings that would be published. */
+const builtInPublicationRules: { id: string; label: string; pattern: RegExp }[] = [
+  { id: "email", label: "이메일 주소", pattern: /[\w.+-]+@[\w.-]+\.[a-z]{2,}/i },
+  { id: "phone", label: "전화번호", pattern: /(?:01[016789]|0\d{1,2})[- .]?\d{3,4}[- .]?\d{4}/ },
+  { id: "token", label: "접근 토큰 또는 API 키", pattern: /(?:github_pat_|gh[pousr]_|api[_ -]?key\s*[:=]|bearer\s+)[\w-]{8,}/i },
+  { id: "private-ip", label: "사설·로컬 IP", pattern: /\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}|127\.0\.0\.1)\b/ },
+  { id: "internal-url", label: "내부 URL", pattern: /(?:https?:\/\/)?(?:local(?:host)|[\w-]+\.local|[\w-]+\.internal)(?::\d+)?(?:\/\S*)?/i },
+];
+
+function preview(value: string, match: string): string {
+  const at = Math.max(0, value.toLowerCase().indexOf(match.toLowerCase()));
+  const start = Math.max(0, at - 12);
+  const end = Math.min(value.length, at + match.length + 12);
+  return `${start > 0 ? "…" : ""}${value.slice(start, at)}••••${value.slice(at + match.length, end)}${end < value.length ? "…" : ""}`;
+}
+
+/** Scan only the payload that can reach the public repository. Built-ins cannot be overridden. */
+export function scanPublication(career: Career): PublicationFinding[] {
+  const out: PublicationFinding[] = [];
+  const publicCareer = toPublic(career);
+  for (const section of sections) {
+    for (const item of publicCareer.sections[section.id]) {
+      for (const field of section.fields) {
+        const value = str(item, field.key);
+        if (!value) continue;
+        for (const rule of builtInPublicationRules) {
+          const match = value.match(rule.pattern)?.[0];
+          if (match) out.push({ ruleId: rule.id, severity: "block", label: rule.label, section: section.id, itemId: item.id, field: field.key, preview: preview(value, match), builtIn: true });
+        }
+        for (const rule of career.settings?.publicationRules ?? []) {
+          const term = rule.term.trim();
+          if (!rule.enabled || !term || !value.toLocaleLowerCase("ko-KR").includes(term.toLocaleLowerCase("ko-KR"))) continue;
+          out.push({ ruleId: rule.id, severity: rule.action, label: `사용자 규칙: ${term}`, section: section.id, itemId: item.id, field: field.key, preview: preview(value, term), builtIn: false });
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/** Backward-compatible summary used by older callers. */
 export function sensitiveHits(career: Career): string[] {
-  const text = JSON.stringify(toPublic(career));
-  return (career.settings?.sensitiveTerms ?? []).filter((t) => t.trim() && text.includes(t.trim()));
+  return scanPublication(career).map((finding) => finding.label);
 }
 
 export function str(item: CareerItem | undefined, key: string): string {
@@ -197,7 +265,7 @@ export function diffCareer(from: Career, to: Career): Change[] {
     }
     for (const [id, item] of a) if (!b.has(id)) out.push({ section: s.id, id, kind: "removed", label: itemLabel(s.id, item) });
   }
-  const terms = (c: Career) => (c.settings?.sensitiveTerms ?? []).join("\n");
+  const terms = (c: Career) => JSON.stringify(c.settings?.publicationRules ?? []);
   if (terms(from) !== terms(to)) out.push({ section: "profile", id: "settings", kind: "changed", label: "주의 단어 설정" });
   return out;
 }
@@ -218,6 +286,6 @@ export function summarizeChanges(changes: Change[]): string {
 
 /** What the public site will gain, change or lose when `to` is saved over `from`. */
 export function publicChanges(from: Career, to: Career): Change[] {
-  const asCareer = (c: Career): Career => ({ ...toPublic(c), settings: { sensitiveTerms: [] } });
+  const asCareer = (c: Career): Career => ({ ...toPublic(c), settings: { publicationRules: [] } });
   return diffCareer(asCareer(from), asCareer(to));
 }
