@@ -2,16 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  emptyCareer, newId, normalizeCareer, sections, sectionById, sensitiveHits, toPublic,
-  type Career, type CareerItem, type SectionId,
+  changeWord, diffCareer, emptyCareer, newId, normalizeCareer, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
+  type Career, type CareerItem, type Change, type SectionId,
 } from "@/lib/career";
 import { docTitle, toMarkdown, type DocKind } from "@/lib/career-export";
 import {
-  OWNER, PRIVATE_PATH, PRIVATE_REPO, PUBLIC_PATH, PUBLIC_REPO, readFile, whoAmI, writeFile,
+  OWNER, PRIVATE_PATH, PRIVATE_REPO, PUBLIC_PATH, PUBLIC_REPO, listRevisions, readFile, whoAmI, writeFile,
+  type Revision,
 } from "@/lib/github-store";
 
 const TOKEN_KEY = "axb-admin-token";
-type Tab = SectionId | "settings" | "export";
+type Tab = SectionId | "settings" | "export" | "history";
 
 function loadToken(): string {
   try { return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || ""; } catch { return ""; }
@@ -28,6 +29,9 @@ export function CareerAdmin() {
   const [draftToken, setDraftToken] = useState("");
   const [remember, setRemember] = useState(false);
   const [career, setCareer] = useState<Career | null>(null);
+  /** The last saved version: the basis for the change summary in the commit message. */
+  const [saved, setSaved] = useState<Career | null>(null);
+  const [restoredFrom, setRestoredFrom] = useState("");
   const [sha, setSha] = useState<string | undefined>();
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState<Tab>("profile");
@@ -40,7 +44,8 @@ export function CareerAdmin() {
       const login = await whoAmI(t);
       if (login.toLowerCase() !== OWNER.toLowerCase()) throw new Error(`이 관리 화면은 ${OWNER} 계정 전용입니다.`);
       const file = await readFile(t, PRIVATE_REPO, PRIVATE_PATH);
-      setCareer(file ? normalizeCareer(JSON.parse(file.text)) : emptyCareer());
+      const loaded = file ? normalizeCareer(JSON.parse(file.text)) : emptyCareer();
+      setCareer(loaded); setSaved(loaded); setRestoredFrom("");
       setSha(file?.sha);
       setToken(t); storeToken(t, keep); setDirty(false);
       setStatus(file ? "불러왔습니다." : "저장된 이력이 없습니다. 입력 후 저장하면 새로 만들어집니다.");
@@ -71,8 +76,10 @@ export function CareerAdmin() {
     setBusy(true); setStatus("저장 중…");
     try {
       const next = { ...career, updatedAt: new Date().toISOString() };
-      const newSha = await writeFile(token, PRIVATE_REPO, PRIVATE_PATH, JSON.stringify(next, null, 2) + "\n", sha, "career: update");
-      setSha(newSha); setCareer(next); setDirty(false);
+      const summary = summarizeChanges(saved ? diffCareer(saved, next) : []);
+      const message = restoredFrom ? `career: ${restoredFrom} 버전으로 되돌림 (${summary})` : `career: ${summary}`;
+      const newSha = await writeFile(token, PRIVATE_REPO, PRIVATE_PATH, JSON.stringify(next, null, 2) + "\n", sha, message);
+      setSha(newSha); setCareer(next); setSaved(next); setRestoredFrom(""); setDirty(false);
       const publicText = JSON.stringify(toPublic(next), null, 2) + "\n";
       const current = await readFile(token, PUBLIC_REPO, PUBLIC_PATH);
       const strip = (t: string) => t.replace(/"updatedAt": "[^"]*",?\n\s*/g, "");
@@ -132,16 +139,105 @@ export function CareerAdmin() {
       {status && <p className="admin-status" role="status">{status}</p>}
       <nav className="admin-tabs" aria-label="이력 항목">
         {[...sections.map((s) => ({ id: s.id as Tab, label: s.label, n: career.sections[s.id].length })),
-          { id: "settings" as Tab, label: "설정", n: 0 }, { id: "export" as Tab, label: "내보내기", n: 0 }].map((t) => (
+          { id: "settings" as Tab, label: "설정", n: 0 }, { id: "export" as Tab, label: "내보내기", n: 0 },
+          { id: "history" as Tab, label: "기록", n: 0 }].map((t) => (
           <button key={t.id} className="filter" aria-pressed={tab === t.id} onClick={() => setTab(t.id)}>
             {t.label}{t.n ? ` ${t.n}` : ""}
           </button>
         ))}
       </nav>
-      {tab === "settings" ? <Settings career={career} update={update} />
+      {restoredFrom && (
+        <p className="admin-status" role="status">
+          {restoredFrom} 버전을 불러왔습니다. 내용을 확인한 뒤 저장하면 되돌리기가 완료됩니다. 저장 전에는 아무것도 바뀌지 않습니다.
+        </p>
+      )}
+      {tab === "history" ? (
+        <History
+          token={token}
+          current={career}
+          dirty={dirty}
+          onRestore={(version, label) => { setCareer(version); setDirty(true); setRestoredFrom(label); setTab("profile"); }}
+        />
+      ) : tab === "settings" ? <Settings career={career} update={update} />
         : tab === "export" ? <Export career={career} />
         : <SectionEditor id={tab} career={career} update={update} />}
     </section>
+  );
+}
+
+function History({ token, current, dirty, onRestore }: {
+  token: string; current: Career; dirty: boolean; onRestore: (version: Career, label: string) => void;
+}) {
+  const [revisions, setRevisions] = useState<Revision[] | null>(null);
+  const [picked, setPicked] = useState<{ rev: Revision; career: Career; changes: Change[] } | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    listRevisions(token, PRIVATE_REPO, PRIVATE_PATH).then(setRevisions).catch((e) => setError((e as Error).message));
+  }, [token]);
+
+  const when = (iso: string) => new Date(iso).toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+
+  const pick = async (rev: Revision) => {
+    setError("");
+    try {
+      const file = await readFile(token, PRIVATE_REPO, PRIVATE_PATH, rev.sha);
+      if (!file) throw new Error("이 버전의 파일을 찾을 수 없습니다.");
+      const version = normalizeCareer(JSON.parse(file.text));
+      setPicked({ rev, career: version, changes: diffCareer(current, version) });
+    } catch (e) { setError((e as Error).message); }
+  };
+
+  const restore = () => {
+    if (!picked) return;
+    if (dirty && !window.confirm("저장하지 않은 변경이 있습니다. 이 버전으로 바꾸면 그 변경은 사라집니다. 계속할까요?")) return;
+    onRestore(picked.career, when(picked.rev.date));
+  };
+
+  if (error) return <p className="admin-status" role="status">{error}</p>;
+  if (!revisions) return <p className="mono-ko">불러오는 중…</p>;
+  if (!revisions.length) return <p className="mono-ko">아직 저장 기록이 없습니다.</p>;
+
+  return (
+    <div className="admin-history">
+      <ol className="admin-revs" aria-label="저장 기록">
+        {revisions.map((r, i) => (
+          <li key={r.sha}>
+            <button className="admin-rev" aria-pressed={picked?.rev.sha === r.sha} onClick={() => pick(r)}>
+              <span className="mono-ko">{when(r.date)}{i === 0 ? " · 최신" : ""}</span>
+              <span>{r.message.replace(/^career:\s*/, "")}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+      <div className="admin-rev-detail">
+        {!picked ? (
+          <p className="mono-ko">버전을 고르면, 지금 내용과 무엇이 다른지 보여 줍니다.</p>
+        ) : (
+          <>
+            <h2 className="admin-rev-title">{when(picked.rev.date)} 버전</h2>
+            {picked.changes.length === 0 ? (
+              <p className="mono-ko">지금 내용과 같습니다.</p>
+            ) : (
+              <>
+                <p className="mono-ko">이 버전으로 되돌리면 바뀌는 것 ({picked.changes.length})</p>
+                <ul className="admin-changes">
+                  {picked.changes.map((c) => (
+                    <li key={`${c.section}-${c.id}-${c.kind}`}>
+                      <span className={`admin-kind ${c.kind}`}>{changeWord[c.kind]}</span>
+                      <span className="mono-ko">{c.id === "settings" ? "설정" : sectionById[c.section].label}</span>
+                      <span>{c.label}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button className="admin-btn primary" onClick={restore}>이 버전 불러오기</button>
+                <p className="mono-ko">불러온 뒤 저장해야 반영됩니다. 기존 기록은 지워지지 않아 언제든 다시 되돌릴 수 있습니다.</p>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

@@ -164,3 +164,49 @@ export function safeHref(value: string): string {
 export function newId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
+
+export type ChangeKind = "added" | "removed" | "changed" | "published" | "unpublished";
+export interface Change { section: SectionId; id: string; kind: ChangeKind; label: string }
+
+/** Human label for an item: its first filled field. */
+export function itemLabel(section: SectionId, item: CareerItem): string {
+  for (const f of sectionById[section].fields) {
+    const v = str(item, f.key).trim();
+    if (v) return v.length > 40 ? v.slice(0, 40) + "…" : v;
+  }
+  return "(빈 항목)";
+}
+
+/** What changes when going from `from` to `to`, item by item (matched by id). */
+export function diffCareer(from: Career, to: Career): Change[] {
+  const out: Change[] = [];
+  for (const s of sections) {
+    const a = new Map(from.sections[s.id].map((i) => [i.id, i]));
+    const b = new Map(to.sections[s.id].map((i) => [i.id, i]));
+    for (const [id, item] of b) {
+      const old = a.get(id);
+      if (!old) { out.push({ section: s.id, id, kind: "added", label: itemLabel(s.id, item) }); continue; }
+      if (old.public !== item.public) out.push({ section: s.id, id, kind: item.public ? "published" : "unpublished", label: itemLabel(s.id, item) });
+      const keys = [...s.fields.map((f) => f.key), "note"];
+      if (keys.some((k) => str(old, k) !== str(item, k))) out.push({ section: s.id, id, kind: "changed", label: itemLabel(s.id, item) });
+    }
+    for (const [id, item] of a) if (!b.has(id)) out.push({ section: s.id, id, kind: "removed", label: itemLabel(s.id, item) });
+  }
+  const terms = (c: Career) => (c.settings?.sensitiveTerms ?? []).join("\n");
+  if (terms(from) !== terms(to)) out.push({ section: "profile", id: "settings", kind: "changed", label: "주의 단어 설정" });
+  return out;
+}
+
+export const changeWord: Record<ChangeKind, string> = { added: "추가", removed: "삭제", changed: "수정", published: "공개", unpublished: "비공개" };
+
+/** Short commit message, e.g. "경력 +1, 학력 수정 1, 공개 1". */
+export function summarizeChanges(changes: Change[]): string {
+  if (!changes.length) return "변경 없음";
+  const counts = new Map<string, number>();
+  for (const c of changes) {
+    const sec = c.id === "settings" ? "설정" : sectionById[c.section].label;
+    const key = c.kind === "added" ? `${sec} +` : c.kind === "removed" ? `${sec} -` : `${sec} ${changeWord[c.kind]} `;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts].map(([k, n]) => `${k}${n}`).join(", ");
+}

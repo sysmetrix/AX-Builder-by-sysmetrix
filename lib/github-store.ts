@@ -46,8 +46,8 @@ export async function whoAmI(token: string): Promise<string> {
   return (await res.json()).login as string;
 }
 
-export async function readFile(token: string, repo: string, path: string): Promise<{ text: string; sha: string } | null> {
-  const res = await fetch(`${API}/repos/${repo}/contents/${path}?ref=${BRANCH}`, { headers: headers(token), cache: "no-store" });
+export async function readFile(token: string, repo: string, path: string, ref: string = BRANCH): Promise<{ text: string; sha: string } | null> {
+  const res = await fetch(`${API}/repos/${repo}/contents/${path}?ref=${encodeURIComponent(ref)}`, { headers: headers(token), cache: "no-store" });
   if (res.status === 404) {
     // 404 means either "no file yet" or "no access"; tell them apart with the repository itself.
     const repoRes = await fetch(`${API}/repos/${repo}`, { headers: headers(token) });
@@ -67,4 +67,14 @@ export async function writeFile(token: string, repo: string, path: string, text:
   });
   if (!res.ok) await fail(res, `${repo} 저장`);
   return (await res.json()).content.sha as string;
+}
+
+export interface Revision { sha: string; date: string; message: string }
+
+/** Saved versions of one file, newest first. */
+export async function listRevisions(token: string, repo: string, path: string, count = 50): Promise<Revision[]> {
+  const res = await fetch(`${API}/repos/${repo}/commits?path=${encodeURIComponent(path)}&sha=${BRANCH}&per_page=${count}`, { headers: headers(token), cache: "no-store" });
+  if (!res.ok) await fail(res, "변경 기록 읽기");
+  const list = (await res.json()) as { sha: string; commit: { message: string; committer: { date: string } } }[];
+  return list.map((c) => ({ sha: c.sha, date: c.commit.committer.date, message: c.commit.message.split("\n")[0] }));
 }

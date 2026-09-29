@@ -453,3 +453,16 @@ figcaption { font-family: var(--sans); font-size: 13px; line-height: 1.55; color
   body:has(.print-doc) { background: #fff; }
   .print-doc { padding: 0; border-radius: 0; }
 }
+.admin-history { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 20px; align-items: start; }
+.admin-revs { list-style: none; padding: 0; display: grid; gap: 6px; max-height: 70vh; overflow: auto; }
+.admin-rev { width: 100%; display: grid; gap: 2px; text-align: left; font: inherit; font-size: 14px; color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+.admin-rev[aria-pressed="true"] { border-color: var(--ink); }
+.admin-rev-detail { display: grid; gap: 12px; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.admin-rev-title { font-family: var(--sans); font-weight: 600; font-size: 18px; }
+.admin-changes { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.admin-changes li { display: grid; grid-template-columns: 3.4em 8em 1fr; gap: 8px; align-items: baseline; }
+.admin-kind { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; text-align: center; }
+.admin-kind.added, .admin-kind.published { border-color: var(--ink2); }
+.admin-kind.removed, .admin-kind.unpublished { color: var(--accent); border-color: var(--accent); }
+@media (max-width: 720px) { .admin-history { grid-template-columns: 1fr; } .admin-changes li { grid-template-columns: 3.4em 1fr; } .admin-changes li > :last-child { grid-column: 1 / -1; } }
+.admin-rev-detail .admin-btn { justify-self: start; }
