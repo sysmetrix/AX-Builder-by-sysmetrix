@@ -43,7 +43,16 @@ export function publicRoutes(): string[] {
   return ["/", "/work", "/about", "/lab", ...work];
 }
 
-/** Default social card (app/og/route.tsx). Attached only after the explicit indexing opt-in. */
-export const ogImages = indexable
-  ? [{ url: `${siteUrl}/og`, width: 1200, height: 630, alt: `${siteName} — I build systems for better public work.` }]
-  : undefined;
+/** Route-aware social card. Attached only after the explicit indexing opt-in. */
+export function ogImagesFor(title: string, eyebrow = siteName) {
+  if (!indexable || !siteUrl) return undefined;
+  const query = new URLSearchParams({ title, eyebrow });
+  return [{
+    url: `${siteUrl}/og?${query}`,
+    width: 1200,
+    height: 630,
+    alt: `${title} — ${eyebrow}`,
+  }];
+}
+
+export const ogImages = ogImagesFor("I build systems for better public work.");

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BrandMark } from "./brand-mark";
-import { ThemeToggle } from "./theme-toggle";
 import { MobileMenu } from "./mobile-menu";
+import { PrimaryNav } from "./primary-nav";
 import { identityLine } from "@/lib/identity";
 
 const nav = [
@@ -22,14 +22,7 @@ export function SiteHeader() {
             <small>by sysmetrix</small>
           </span>
         </Link>
-        <nav className="nav-desktop" aria-label="주요 메뉴">
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href}>
-              {n.label}
-            </Link>
-          ))}
-          <ThemeToggle />
-        </nav>
+        <PrimaryNav items={nav} />
         <MobileMenu items={nav} />
       </div>
     </header>

@@ -9,6 +9,8 @@ export interface WorkItem {
   oneLiner: string;
   themes: string[];
   themeLabels: string[];
+  year: string;
+  status: string;
   /** Present only when the project has a case-study page. */
   href?: string;
 }
@@ -101,6 +103,7 @@ export function WorkIndex({ groups, filters }: { groups: WorkGroup[]; filters: W
                 </div>
                 <div>
                   <p>{it.oneLiner}</p>
+                  <p className="row-meta mono-ko">{it.year} · {it.status} · {it.href ? "사례 있음" : "목록 정보"}</p>
                 </div>
               </li>
             ))}

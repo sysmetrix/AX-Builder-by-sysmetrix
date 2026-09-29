@@ -3,11 +3,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
+import { capabilityAxes } from "@/lib/capabilities";
 import { identityLine } from "@/lib/identity";
 
 const introKey = "axb-intro-seen";
 
-export function HomeIntro({ projectCount }: { projectCount: number }) {
+export function HomeIntro() {
   useEffect(() => {
     const root = document.documentElement;
     try {
@@ -36,7 +37,7 @@ export function HomeIntro({ projectCount }: { projectCount: number }) {
         </span>
       </div>
       <p className="mono fade">{identityLine}</p>
-      <h1 id="hero-title" className="display fade d2">
+      <h1 id="hero-title" className="display">
         <span className="ln">I build systems</span>{" "}
         <span className="ln">
           for <em>better</em> public work.
@@ -46,14 +47,21 @@ export function HomeIntro({ projectCount }: { projectCount: number }) {
       <div className="cols">
         <p>
           청소년 현장과 사업을 기반으로, 정책·성과·데이터·AX를 연결해
-          실제 업무에 쓰이는 시스템과 도구를 만듭니다. 현장에서 시작해 정책과 성과,
-          그리고 데이터와 AX로 일의 범위를 넓혀 왔습니다.
+          실제 업무에 쓰이는 시스템과 도구를 만듭니다.
         </p>
-        <p>
+        <div className="hero-paths">
+          <ul aria-label="주요 역량">
+            {capabilityAxes.map((axis) => (
+              <li key={axis.en}>
+                <span>{axis.en}</span>
+                <small>{axis.ko}</small>
+              </li>
+            ))}
+          </ul>
           <Link className="primary-cta" href="#work">
-            대표작 {projectCount}편 읽기 ↓
+            대표 작업 살펴보기 ↓
           </Link>
-        </p>
+        </div>
       </div>
     </section>
   );

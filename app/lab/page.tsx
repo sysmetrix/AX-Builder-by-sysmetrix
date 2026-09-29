@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ProjectRow } from "@/components/project-parts";
 import { publicProjectsByCategory } from "@/lib/catalog";
-import { canonical, ogImages, publicUrl, siteName } from "@/lib/site";
+import { canonical, ogImagesFor, publicUrl, siteName } from "@/lib/site";
 
 const title = "도구와 실험";
 const description = "작은 반복업무와 데이터 표현 아이디어를 실제로 만들어 검증한 도구와 실험 모음.";
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: canonical("/lab"),
-  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/lab"), images: ogImages },
-  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImages },
+  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/lab"), images: ogImagesFor("필요한 것이 없으면, 작게라도 직접 만듭니다.", "Lab · AX Builder") },
+  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImagesFor("필요한 것이 없으면, 작게라도 직접 만듭니다.", "Lab · AX Builder") },
 };
 
 const groups = [

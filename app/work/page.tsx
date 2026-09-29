@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { WorkIndex, type WorkFilter, type WorkGroup } from "@/components/work-index";
+import { statusLabel } from "@/components/project-parts";
 import { hasCaseStudy, publicProjects, themeLabels, themesInUse } from "@/lib/catalog";
-import { canonical, ogImages, publicUrl, siteName } from "@/lib/site";
+import { canonical, ogImagesFor, publicUrl, siteName } from "@/lib/site";
 import { themes } from "@/lib/themes";
 
 const title = "전체 작업";
@@ -12,8 +13,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: canonical("/work"),
-  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/work"), images: ogImages },
-  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImages },
+  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/work"), images: ogImagesFor("만들어 온 작업의 전체 목록.", "Work · AX Builder") },
+  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImagesFor("만들어 온 작업의 전체 목록.", "Work · AX Builder") },
 };
 
 /**
@@ -40,6 +41,8 @@ const groups: WorkGroup[] = groupDefs
         oneLiner: p.oneLiner,
         themes: p.themes as string[],
         themeLabels: themeLabels(p),
+        year: p.year,
+        status: statusLabel(p.status),
         href: hasCaseStudy(p) ? `/work/${p.slug}` : undefined,
       })),
   }))

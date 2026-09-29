@@ -1,14 +1,13 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Project } from "@/lib/projects";
 import { hasCaseStudy, themeLabels } from "@/lib/catalog";
 import { flows } from "@/lib/flows";
 
-export function Flow({ slug }: { slug: string }) {
+export function Flow({ slug, id }: { slug: string; id?: string }) {
   const flow = flows[slug];
   if (!flow) return null;
   return (
-    <figure className="figure">
+    <figure className="figure" id={id}>
       <ol className="flow" aria-label={`${flow.what} 업무 흐름 도식`}>
         {flow.steps.map((s) => (
           <li key={s.label} className={s.source ? "src" : undefined}>
@@ -27,7 +26,6 @@ export function Flow({ slug }: { slug: string }) {
 /** Selected Work card: outcome-first title → Problem / System / Change / Engineering. */
 export function ProjectFeature({ project, index, total }: { project: Project; index: number; total: number }) {
   const flow = flows[project.slug];
-  const lead = project.screens?.[0];
   return (
     <article className="feature">
       <div className="feature-top mono-ko">
@@ -62,17 +60,6 @@ export function ProjectFeature({ project, index, total }: { project: Project; in
         </div>
         <div className="feature-side">
           <Flow slug={project.slug} />
-          {lead && (
-            <figure className="feature-shot">
-              <Image
-                src={lead.src}
-                alt={lead.alt}
-                width={lead.width}
-                height={lead.height}
-                sizes="(max-width: 820px) calc(100vw - 40px), 520px"
-              />
-            </figure>
-          )}
         </div>
       </div>
       <span className="more" aria-hidden="true">사례 읽기 →</span>
@@ -80,19 +67,53 @@ export function ProjectFeature({ project, index, total }: { project: Project; in
   );
 }
 
+/** A lower-density Selected Work entry used only on Home; the full case study remains one click away. */
+export function ProjectCompact({ project }: { project: Project }) {
+  const flow = flows[project.slug];
+  const themes = themeLabels(project).join(" · ");
+  return (
+    <article className="feature-compact">
+      <div className="compact-meta mono-ko">
+        <span>{flow?.what ?? project.eyebrow}</span>
+        <span>{themes}</span>
+      </div>
+      <h3>
+        <Link href={`/work/${project.slug}`} className="compact-link">
+          {flow?.headline ?? project.oneLiner}
+          <span className="sr-only"> — {project.title} 사례 읽기</span>
+        </Link>
+      </h3>
+      <p>{project.outcome}</p>
+      <span className="more" aria-hidden="true">사례 읽기 →</span>
+    </article>
+  );
+}
+
 export function ProjectRow({ project }: { project: Project }) {
   const themes = themeLabels(project).join(" · ");
+  const caseAvailable = hasCaseStudy(project);
   return (
     <li className="row-item">
       <div>
-        <h3>{hasCaseStudy(project) ? <Link href={`/work/${project.slug}`}>{project.title}</Link> : project.title}</h3>
+        <h3>{caseAvailable ? <Link href={`/work/${project.slug}`}>{project.title}</Link> : project.title}</h3>
         <p className="mono-ko">{themes || categoryLabel(project.category)}</p>
       </div>
       <div>
         <p>{project.oneLiner}</p>
+        <p className="row-meta mono-ko">{project.year} · {statusLabel(project.status)} · {caseAvailable ? "사례 있음" : "목록 정보"}</p>
       </div>
     </li>
   );
+}
+
+export function statusLabel(status: Project["status"]) {
+  switch (status) {
+    case "Live": return "운영 중";
+    case "Active": return "개선 중";
+    case "Completed": return "완료";
+    case "Experiment": return "실험";
+    case "Distribution": return "배포";
+  }
 }
 
 export function visibilityLabel(p: Project) {

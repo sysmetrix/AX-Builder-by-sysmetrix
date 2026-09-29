@@ -24,7 +24,7 @@ export const viewport: Viewport = {
 };
 
 // Runs before first paint so a stored theme choice never flashes the wrong palette.
-const themeInit = `try{var t=localStorage.getItem("axb-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t;if(sessionStorage.getItem("axb-intro-seen")==="1")document.documentElement.dataset.intro="seen"}catch(e){}`;
+const themeInit = `try{var t=localStorage.getItem("axb-theme");if(t!=="light")t="dark";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#f1ede3":"#0c0c0b";if(sessionStorage.getItem("axb-intro-seen")==="1")document.documentElement.dataset.intro="seen"}catch(e){}`;
 
 // The mono face is used only for small labels. Keep the exact locked typeface, but do not
 // compete with the hero's Geist Sans preload on a cold connection.

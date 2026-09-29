@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "./theme-toggle";
+import { isCurrentNav } from "./primary-nav";
 
 /**
  * Disclosure menu for narrow viewports (CSS shows it <=720px).
@@ -10,6 +12,7 @@ import { ThemeToggle } from "./theme-toggle";
  * Esc closes and returns focus to the button, and the sheet closes when the viewport widens.
  */
 export function MobileMenu({ items }: { items: { href: string; label: string }[] }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
 
@@ -55,7 +58,7 @@ export function MobileMenu({ items }: { items: { href: string; label: string }[]
         <div id="mobile-panel" className="menu-panel">
           <nav aria-label="모바일 메뉴">
             {items.map((n, i) => (
-              <Link key={n.href} href={n.href} onClick={() => setOpen(false)}>
+              <Link key={n.href} href={n.href} aria-current={isCurrentNav(pathname, n.href) ? "page" : undefined} onClick={() => setOpen(false)}>
                 <span className="mono" aria-hidden="true">0{i + 1}</span>
                 {n.label}
               </Link>

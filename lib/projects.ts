@@ -8,6 +8,7 @@ export type ProjectCategory =
   | "history";
 
 export type SourceVisibility = "public" | "private" | "internal" | "history";
+export type HomePresentation = "lead" | "compact";
 
 export interface ProjectScreen {
   src: string;
@@ -23,6 +24,8 @@ export interface Project {
   eyebrow: string;
   year: string;
   category: ProjectCategory;
+  /** Required for Selected Work: controls only the hierarchy of its Home presentation. */
+  homePresentation?: HomePresentation;
   /** Domain axis (multi-valued, may be empty). See lib/themes.ts. */
   themes: ThemeId[];
   /** Name used inside the organisation, shown only as a small label on the detail page (never as the main title). */
@@ -51,6 +54,7 @@ export const projects: Project[] = [
     eyebrow: "성과관리 시스템",
     year: "2026",
     category: "selected-work",
+    homePresentation: "lead",
     themes: ["performance", "strategy"],
     sourceVisibility: "private",
     status: "Live",
@@ -72,6 +76,7 @@ export const projects: Project[] = [
     eyebrow: "청소년 사업 설문 분석·평가 도구",
     year: "2026",
     category: "selected-work",
+    homePresentation: "lead",
     themes: ["youth-work", "data-evaluation", "performance", "document-engineering"],
     sourceVisibility: "public",
     status: "Live",
@@ -118,6 +123,7 @@ export const projects: Project[] = [
     eyebrow: "Document Engineering",
     year: "2026",
     category: "selected-work",
+    homePresentation: "lead",
     themes: ["document-engineering", "ax-automation"],
     sourceVisibility: "public",
     status: "Live",
@@ -156,6 +162,7 @@ export const projects: Project[] = [
     eyebrow: "Internal Workflow Automation",
     year: "2026",
     category: "selected-work",
+    homePresentation: "compact",
     themes: ["ax-automation", "document-engineering"],
     sourceVisibility: "public",
     status: "Live",
@@ -200,6 +207,7 @@ export const projects: Project[] = [
     eyebrow: "Windows Office Automation",
     year: "2026",
     category: "selected-work",
+    homePresentation: "compact",
     themes: ["document-engineering", "ax-automation"],
     sourceVisibility: "private",
     status: "Active",
@@ -221,6 +229,7 @@ export const projects: Project[] = [
     eyebrow: "AI Document Production System",
     year: "2026",
     category: "selected-work",
+    homePresentation: "compact",
     themes: ["strategy", "ax-automation", "document-engineering"],
     sourceVisibility: "private",
     status: "Active",

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { hasCaseStudy, sortedProjects } from "@/lib/catalog";
-import { canonical, ogImages, publicUrl, siteName } from "@/lib/site";
-import type { ThemeId } from "@/lib/themes";
+import { capabilityAxes } from "@/lib/capabilities";
+import { canonical, ogImagesFor, publicUrl, siteName } from "@/lib/site";
 
 const title = "소개";
 const description =
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   title,
   description,
   alternates: canonical("/about"),
-  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/about"), images: ogImages },
-  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImages },
+  openGraph: { type: "website", siteName, locale: "ko_KR", title: `${title} — ${siteName}`, description, url: publicUrl("/about"), images: ogImagesFor("현장을 아는 사람이 직접 시스템을 만듭니다.", "About · AX Builder") },
+  twitter: { card: "summary_large_image", title: `${title} — ${siteName}`, description, images: ogImagesFor("현장을 아는 사람이 직접 시스템을 만듭니다.", "About · AX Builder") },
 };
 
 /**
@@ -23,32 +23,8 @@ export const metadata: Metadata = {
  *  - youth-field words: 사업 · 활동 · 프로그램. Things that were built: 시스템 · 서비스 · 도구 · 자동화.
  * Related works are derived from project `themes` (lib/catalog.ts), each project under the first axis it matches.
  */
-const axes: { en: string; ko: string; stage: string; body: string; themes: ThemeId[] }[] = [
-  {
-    en: "Youth Work & Programs",
-    ko: "청소년 사업·현장",
-    stage: "경험 · Experience",
-    body: "청소년 활동과 사업의 현장에서 프로그램을 기획하고 운영해 왔습니다. 이 현장 경험이 이후 모든 작업의 출발점입니다.",
-    themes: ["youth-work"],
-  },
-  {
-    en: "Policy & Performance",
-    ko: "정책·성과",
-    stage: "현재 · Practice",
-    body: "현재 성과관리와 청소년·청년 정책 업무를 하고 있습니다. 목표·성과·지표를 구분하고, 사업과 정책의 의사결정 흐름을 시스템 설계에 반영합니다.",
-    themes: ["policy", "performance", "strategy"],
-  },
-  {
-    en: "AX & Digital Building",
-    ko: "AX·디지털 구축",
-    stage: "현재 · Practice",
-    body: "현재 AX 전략과 AX 챌린저 운영도 맡고 있습니다. AI를 기능 하나로 붙이기보다 사람이 반복하는 업무 흐름 전체를 다시 설계하고, 시스템·서비스·도구·자동화로 직접 만듭니다.",
-    themes: ["ax-automation", "document-engineering"],
-  },
-];
-
 const shown = new Set<string>();
-const related = axes.map((axis) => {
+const related = capabilityAxes.map((axis) => {
   const list = sortedProjects
     .filter((p) => p.sourceVisibility !== "internal" && !shown.has(p.slug) && p.themes.some((t) => axis.themes.includes(t)))
     .slice(0, 6);
@@ -73,7 +49,7 @@ export default function AboutPage() {
           <p>What I Work On</p>
         </div>
         <ul className="rows">
-          {axes.map((axis, i) => (
+          {capabilityAxes.map((axis, i) => (
             <li className="row-item" key={axis.en}>
               <div>
                 <h3>{axis.en}</h3>
@@ -81,7 +57,7 @@ export default function AboutPage() {
               </div>
               <div>
                 <p className="mono-ko">{axis.stage}</p>
-                <p>{axis.body}</p>
+                <p>{axis.summary}</p>
                 {related[i].length > 0 && (
                   <p className="mono-ko about-works">
                     관련 작업 ·{" "}
@@ -97,6 +73,18 @@ export default function AboutPage() {
             </li>
           ))}
         </ul>
+      </section>
+      <section className="block" aria-labelledby="method-h">
+        <div className="sec-h">
+          <h2 id="method-h">일하는 방식</h2>
+          <p>How I Build</p>
+        </div>
+        <ol className="method-steps">
+          <li><span className="mono">01</span><h3>현장 문제 정의</h3><p>사용자가 반복해서 판단하고 옮기고 확인하는 지점을 실제 업무 언어로 정리합니다.</p></li>
+          <li><span className="mono">02</span><h3>업무 흐름 모델링</h3><p>입력·판단·예외·산출의 순서와 책임을 시스템이 다룰 수 있는 구조로 바꿉니다.</p></li>
+          <li><span className="mono">03</span><h3>직접 구현</h3><p>문제에 맞는 웹·데스크톱·문서 자동화 환경을 선택해 실제 사용할 수 있는 도구로 만듭니다.</p></li>
+          <li><span className="mono">04</span><h3>산출물 검증·개선</h3><p>화면만이 아니라 문서·데이터·권한·예외 처리까지 실제 결과물을 기준으로 확인하고 고칩니다.</p></li>
+        </ol>
       </section>
     </div>
   );

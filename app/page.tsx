@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HomeIntro } from "@/components/home-intro";
-import { ProjectFeature, ProjectRow } from "@/components/project-parts";
-import { publicProjectsByCategory, selectedProjects } from "@/lib/catalog";
+import { ProjectCompact, ProjectFeature, ProjectRow } from "@/components/project-parts";
+import { homeCompactProjects, homeLeadProjects, publicProjectsByCategory, selectedProjects } from "@/lib/catalog";
 import { canonical } from "@/lib/site";
 
 export const metadata: Metadata = { alternates: canonical("/") };
@@ -12,7 +12,6 @@ export const metadata: Metadata = { alternates: canonical("/") };
 const HOME_DATA_LIMIT = 3;
 const HOME_TOOLS_LIMIT = 4;
 
-const selected = selectedProjects;
 const allResearch = publicProjectsByCategory("data-research");
 const research = allResearch.slice(0, HOME_DATA_LIMIT);
 const moreResearch = allResearch.length - research.length;
@@ -24,16 +23,25 @@ export default function Home() {
   return (
     <>
       <div className="wrap">
-        <HomeIntro projectCount={selected.length} />
+        <HomeIntro />
 
         <section className="block" id="work" aria-labelledby="work-h">
           <div className="sec-h">
             <h2 id="work-h">대표 작업</h2>
             <p>바뀐 업무를 먼저 설명하고, 기술은 마지막에 둡니다.</p>
           </div>
-          {selected.map((p, i) => (
-            <ProjectFeature key={p.slug} project={p} index={i} total={selected.length} />
+          {homeLeadProjects.map((p) => (
+            <ProjectFeature
+              key={p.slug}
+              project={p}
+              index={selectedProjects.indexOf(p)}
+              total={selectedProjects.length}
+            />
           ))}
+          <div className="compact-work">
+            <h3 id="compact-work-h" className="mono-ko compact-work-title">함께 보는 대표 시스템</h3>
+            {homeCompactProjects.map((p) => <ProjectCompact key={p.slug} project={p} />)}
+          </div>
           <Link className="more" href="/work">전체 작업 보기 →</Link>
         </section>
 
