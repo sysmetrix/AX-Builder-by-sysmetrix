@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { hasCaseStudy, sortedProjects } from "@/lib/catalog";
 import { capabilityAxes } from "@/lib/capabilities";
-import { period, safeHref, str } from "@/lib/career";
-import { publicContacts, publicTimeline } from "@/lib/career-public";
 import { canonical, ogImagesFor, publicUrl, siteName } from "@/lib/site";
 
 const title = "소개";
@@ -88,48 +86,6 @@ export default function AboutPage() {
           <li><span className="mono">04</span><h3>산출물 검증·개선</h3><p>화면만이 아니라 문서·데이터·권한·예외 처리까지 실제 결과물을 기준으로 확인하고 고칩니다.</p></li>
         </ol>
       </section>
-      {publicTimeline.length > 0 && (
-        <section className="block" aria-labelledby="career-h">
-          <div className="sec-h">
-            <h2 id="career-h">걸어온 길</h2>
-            <p>Career</p>
-          </div>
-          <ul className="rows">
-            {publicTimeline.map((item) => (
-              <li className="row-item" key={item.id}>
-                <div>
-                  <h3>{str(item, "org") || str(item, "title")}</h3>
-                  <p className="mono-ko">{period(item) || str(item, "year")}</p>
-                </div>
-                <div>
-                  {str(item, "role") && <p className="mono-ko">{str(item, "role")}</p>}
-                  {str(item, "summary") && <p>{str(item, "summary")}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {publicContacts.length > 0 && (
-        <section className="block" aria-labelledby="contact-h">
-          <div className="sec-h">
-            <h2 id="contact-h">연락</h2>
-            <p>Contact</p>
-          </div>
-          <ul className="rows">
-            {publicContacts.map((c) => (
-              <li className="row-item" key={c.id}>
-                <div><h3>{str(c, "label")}</h3></div>
-                <div>
-                  {safeHref(str(c, "url"))
-                    ? <a className="more" href={safeHref(str(c, "url"))} rel="noopener noreferrer">{str(c, "value") || str(c, "url")}</a>
-                    : <p>{str(c, "value")}</p>}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }

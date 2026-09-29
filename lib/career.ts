@@ -1,10 +1,14 @@
 // Career data model shared by the admin editor (/admin), the resume exports and the public pages.
-// The full record lives in a PRIVATE repository; only items marked `public` are copied to
-// content/career.public.json, which is the only career data the public site ever imports.
+// The full record lives in a PRIVATE repository. Only the 기본 정보 (profile) section may ever be
+// published (user decision, 2026-09-29): every other section is personal data and is always
+// written as an empty list to content/career.public.json, whatever its items' `public` flags say.
 
 export type FieldType = "text" | "textarea" | "month" | "url";
 export interface FieldDef { key: string; label: string; type: FieldType; placeholder?: string }
 export interface SectionDef { id: SectionId; label: string; single?: boolean; fields: FieldDef[] }
+
+/** The only sections that can ever be published. Everything else is private, always. */
+export const PUBLISHABLE: ReadonlySet<SectionId> = new Set<SectionId>(["profile"]);
 
 export type SectionId =
   | "profile" | "contacts" | "experience" | "youthPrograms" | "achievements"
@@ -109,12 +113,13 @@ export function normalizeCareer(raw: unknown): Career {
   return base;
 }
 
-/** Only `public` items, only declared fields, no private memo and no settings. */
+/** Only publishable sections, only `public` items, only declared fields, no memo, no settings. */
 export function toPublic(career: Career): PublicCareer {
   const out = emptyCareer() as PublicCareer & { settings?: unknown };
   delete out.settings;
   out.updatedAt = career.updatedAt;
   for (const s of sections) {
+    if (!PUBLISHABLE.has(s.id)) continue; // stays []
     out.sections[s.id] = career.sections[s.id]
       .filter((item) => item.public === true)
       .map((item) => {

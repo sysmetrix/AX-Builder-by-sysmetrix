@@ -8,13 +8,12 @@ export interface BuilderLogStats {
   publicSources: number;
   themes: number;
 }
-export interface BuilderLogEntry { when: string; title: string; detail: string }
 
 /**
  * Easter egg: type "a" then "x" anywhere (outside form fields), or tap the footer name five times.
- * Shows a small log built only from public data, and a quiet entrance to the owner's editor.
+ * Shows public project stats only (no personal career data), and a quiet entrance to the owner's editor.
  */
-export function BuilderLog({ identity, stats, timeline }: { identity: string; stats: BuilderLogStats; timeline: BuilderLogEntry[] }) {
+export function BuilderLog({ identity, stats }: { identity: string; stats: BuilderLogStats }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [taps, setTaps] = useState<number[]>([]);
 
@@ -55,18 +54,7 @@ export function BuilderLog({ identity, stats, timeline }: { identity: string; st
             <div><dt className="mono-ko">공개 소스</dt><dd>{stats.publicSources}</dd></div>
             <div><dt className="mono-ko">주제</dt><dd>{stats.themes}</dd></div>
           </dl>
-          {timeline.length > 0 ? (
-            <ol className="builder-timeline">
-              {timeline.map((t) => (
-                <li key={`${t.when}-${t.title}`}>
-                  <span className="mono-ko">{t.when}</span>
-                  <span>{t.title}{t.detail && <small> · {t.detail}</small>}</span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="builder-note">현장에서 시작해, 정책과 성과를 거쳐, 데이터와 AX로. 기록은 계속 쌓이는 중입니다.</p>
-          )}
+          <p className="builder-note">현장에서 시작해, 정책과 성과를 거쳐, 데이터와 AX로. 기록은 계속 쌓이는 중입니다.</p>
           <div className="builder-foot">
             {/* Full page load on purpose: /admin has its own security policy (GitHub access). */}
             <a href="/admin" className="mono-ko builder-owner">owner</a>

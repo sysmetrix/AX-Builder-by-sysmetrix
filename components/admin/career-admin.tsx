@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  changeWord, diffCareer, emptyCareer, newId, normalizeCareer, publicChanges, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
+  PUBLISHABLE, changeWord, diffCareer, emptyCareer, newId, normalizeCareer, publicChanges, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
   type Career, type CareerItem, type Change, type SectionId,
 } from "@/lib/career";
 import { docTitle, toMarkdown, type DocKind } from "@/lib/career-export";
@@ -307,15 +307,20 @@ function SectionEditor({ id, career, update }: { id: SectionId; career: Career; 
 
   return (
     <div className="admin-section">
+      {!PUBLISHABLE.has(id) && <p className="admin-private">이 탭은 개인정보라 공개 사이트에 절대 올라가지 않습니다. 비공개 저장소와 이력서 내보내기에만 쓰입니다.</p>}
       {items.length === 0 && <p className="mono-ko">아직 항목이 없습니다.</p>}
       {items.map((item: CareerItem, i) => (
         <fieldset key={item.id} className="admin-item">
           <legend className="mono-ko">{def.label} {def.single ? "" : i + 1}</legend>
           <div className="admin-item-bar">
-            <label className="admin-check">
-              <input type="checkbox" checked={item.public} onChange={(e) => set(i, "public", e.target.checked)} />
-              공개 사이트에 표시
-            </label>
+            {PUBLISHABLE.has(id) ? (
+              <label className="admin-check">
+                <input type="checkbox" checked={item.public} onChange={(e) => set(i, "public", e.target.checked)} />
+                공개 사이트에 표시
+              </label>
+            ) : (
+              <span className="admin-private">비공개 전용 · 공개되지 않습니다</span>
+            )}
             {!def.single && (
               <span>
                 <button className="admin-btn small" onClick={() => move(i, -1)} aria-label="위로">↑</button>
@@ -362,8 +367,7 @@ function Settings({ career, update }: { career: Career; update: (fn: (c: Career)
 
 function Export({ career }: { career: Career }) {
   const [kind, setKind] = useState<DocKind>("resume");
-  const [publicOnly, setPublicOnly] = useState(false);
-  const md = useMemo(() => toMarkdown(career, kind, publicOnly), [career, kind, publicOnly]);
+  const md = useMemo(() => toMarkdown(career, kind), [career, kind]);
   const html = useMemo(() => mdToHtml(md), [md]);
 
   const download = () => {
@@ -379,9 +383,6 @@ function Export({ career }: { career: Career }) {
         {(["resume", "career"] as DocKind[]).map((k) => (
           <button key={k} className="filter" aria-pressed={kind === k} onClick={() => setKind(k)}>{docTitle[k]}</button>
         ))}
-        <label className="admin-check">
-          <input type="checkbox" checked={publicOnly} onChange={(e) => setPublicOnly(e.target.checked)} /> 공개 항목만
-        </label>
       </div>
       <div className="admin-item-bar">
         <button className="admin-btn" onClick={() => window.print()}>PDF로 저장 (인쇄)</button>

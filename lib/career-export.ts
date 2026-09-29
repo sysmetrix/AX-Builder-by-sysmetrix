@@ -5,8 +5,8 @@ import { byRecent, period, str, type Career, type CareerItem } from "./career";
 export type DocKind = "resume" | "career";
 export const docTitle: Record<DocKind, string> = { resume: "이력서", career: "경력기술서" };
 
-function pick(career: Career, publicOnly: boolean) {
-  const f = (list: CareerItem[]) => (publicOnly ? list.filter((i) => i.public) : list);
+function pick(career: Career) {
+  const f = (list: CareerItem[]) => list;
   const s = career.sections;
   return {
     profile: f(s.profile)[0],
@@ -25,8 +25,8 @@ const lines = (text: string) => text.split(/\r?\n/).map((l) => l.trim()).filter(
 const join = (...parts: string[]) => parts.filter(Boolean).join(" · ");
 const when = (text: string) => (text ? ` (${text})` : "");
 
-export function toMarkdown(career: Career, kind: DocKind, publicOnly = false): string {
-  const d = pick(career, publicOnly);
+export function toMarkdown(career: Career, kind: DocKind): string {
+  const d = pick(career);
   const out: string[] = [];
   const name = str(d.profile, "name");
   out.push(`# ${docTitle[kind]}${name ? ` — ${name}` : ""}`, "");

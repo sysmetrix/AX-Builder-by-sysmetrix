@@ -403,14 +403,10 @@ figcaption { font-family: var(--sans); font-size: 13px; line-height: 1.55; color
 .builder-log h2 { font-family: var(--sans); font-weight: 600; font-size: clamp(26px, 4vw, 34px); letter-spacing: -0.03em; }
 .builder-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; border-top: 1px solid var(--rule); padding-top: 14px; }
 .builder-stats dd { margin: 4px 0 0; font-family: var(--sans); font-size: 28px; font-weight: 600; }
-.builder-timeline { list-style: none; padding: 0; display: grid; gap: 10px; }
-.builder-timeline li { display: grid; grid-template-columns: 9.5em 1fr; gap: 12px; font-size: 14.5px; }
-.builder-timeline small { color: var(--ink3); }
 .builder-note { color: var(--ink2); font-size: 14.5px; }
 .builder-foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 14px; }
 .builder-owner { color: var(--ink3); opacity: 0.7; }
-@media (max-width: 560px) { .builder-stats { grid-template-columns: repeat(2, 1fr); } .builder-timeline li { grid-template-columns: 1fr; gap: 2px; } }
-
+@media (max-width: 560px) { .builder-stats { grid-template-columns: repeat(2, 1fr); } 
 /* Admin (/admin) */
 .admin, .admin-login { padding-block: clamp(32px, 6vw, 72px); display: grid; gap: 20px; }
 .admin-login { max-width: 560px; }
@@ -469,3 +465,4 @@ figcaption { font-family: var(--sans); font-size: 13px; line-height: 1.55; color
 .publish-confirm { width: min(620px, calc(100vw - 32px)); }
 .publish-note { display: grid; gap: 8px; font-size: 14.5px; color: var(--ink2); line-height: 1.6; }
 .publish-note b, .publish-warn b { color: var(--ink); }
+.admin-private { font-size: 13px; color: var(--ink3); }
