@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <div className="wrap">
+    <div className="wrap admin-page-wrap">
       <CareerAdmin />
     </div>
   );
