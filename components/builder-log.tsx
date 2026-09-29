@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 
 export interface BuilderLogStats {
   projects: number;
@@ -69,7 +68,8 @@ export function BuilderLog({ identity, stats, timeline }: { identity: string; st
             <p className="builder-note">현장에서 시작해, 정책과 성과를 거쳐, 데이터와 AX로. 기록은 계속 쌓이는 중입니다.</p>
           )}
           <div className="builder-foot">
-            <Link href="/admin" className="mono-ko builder-owner" onClick={() => ref.current?.close()}>owner</Link>
+            {/* Full page load on purpose: /admin has its own security policy (GitHub access). */}
+            <a href="/admin" className="mono-ko builder-owner">owner</a>
             <button type="button" className="admin-btn small" onClick={() => ref.current?.close()}>닫기</button>
           </div>
         </div>
