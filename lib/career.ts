@@ -210,3 +210,9 @@ export function summarizeChanges(changes: Change[]): string {
   }
   return [...counts].map(([k, n]) => `${k}${n}`).join(", ");
 }
+
+/** What the public site will gain, change or lose when `to` is saved over `from`. */
+export function publicChanges(from: Career, to: Career): Change[] {
+  const asCareer = (c: Career): Career => ({ ...toPublic(c), settings: { sensitiveTerms: [] } });
+  return diffCareer(asCareer(from), asCareer(to));
+}

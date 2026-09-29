@@ -466,3 +466,6 @@ figcaption { font-family: var(--sans); font-size: 13px; line-height: 1.55; color
 .admin-kind.removed, .admin-kind.unpublished { color: var(--accent); border-color: var(--accent); }
 @media (max-width: 720px) { .admin-history { grid-template-columns: 1fr; } .admin-changes li { grid-template-columns: 3.4em 1fr; } .admin-changes li > :last-child { grid-column: 1 / -1; } }
 .admin-rev-detail .admin-btn { justify-self: start; }
+.publish-confirm { width: min(620px, calc(100vw - 32px)); }
+.publish-note { display: grid; gap: 8px; font-size: 14.5px; color: var(--ink2); line-height: 1.6; }
+.publish-note b, .publish-warn b { color: var(--ink); }

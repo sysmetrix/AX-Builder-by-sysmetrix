@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  changeWord, diffCareer, emptyCareer, newId, normalizeCareer, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
+  changeWord, diffCareer, emptyCareer, newId, normalizeCareer, publicChanges, sections, sectionById, sensitiveHits, summarizeChanges, toPublic,
   type Career, type CareerItem, type Change, type SectionId,
 } from "@/lib/career";
 import { docTitle, toMarkdown, type DocKind } from "@/lib/career-export";
@@ -32,6 +32,7 @@ export function CareerAdmin() {
   /** The last saved version: the basis for the change summary in the commit message. */
   const [saved, setSaved] = useState<Career | null>(null);
   const [restoredFrom, setRestoredFrom] = useState("");
+  const [pending, setPending] = useState<{ changes: Change[]; hits: string[] } | null>(null);
   const [sha, setSha] = useState<string | undefined>();
   const [dirty, setDirty] = useState(false);
   const [tab, setTab] = useState<Tab>("profile");
@@ -69,10 +70,17 @@ export function CareerAdmin() {
     setDirty(true);
   };
 
-  const save = async () => {
+  /** Saving that changes the public site first asks for confirmation (see PublishConfirm). */
+  const save = () => {
     if (!career || !token) return;
-    const hits = sensitiveHits(career);
-    if (hits.length && !window.confirm(`공개 항목에 주의 단어가 있습니다: ${hits.join(", ")}\n그래도 공개 사이트에 올릴까요?`)) return;
+    const changes = publicChanges(saved ?? emptyCareer(), career);
+    if (changes.length) setPending({ changes, hits: sensitiveHits(career) });
+    else void doSave();
+  };
+
+  const doSave = async () => {
+    if (!career || !token) return;
+    setPending(null);
     setBusy(true); setStatus("저장 중…");
     try {
       const next = { ...career, updatedAt: new Date().toISOString() };
@@ -146,6 +154,7 @@ export function CareerAdmin() {
           </button>
         ))}
       </nav>
+      {pending && <PublishConfirm {...pending} onConfirm={() => void doSave()} onCancel={() => setPending(null)} />}
       {restoredFrom && (
         <p className="admin-status" role="status">
           {restoredFrom} 버전을 불러왔습니다. 내용을 확인한 뒤 저장하면 되돌리기가 완료됩니다. 저장 전에는 아무것도 바뀌지 않습니다.
@@ -162,6 +171,50 @@ export function CareerAdmin() {
         : tab === "export" ? <Export career={career} />
         : <SectionEditor id={tab} career={career} update={update} />}
     </section>
+  );
+}
+
+const publicWord: Record<Change["kind"], string> = {
+  added: "새로 공개", changed: "공개 내용 수정", removed: "사이트에서 내림", published: "새로 공개", unpublished: "사이트에서 내림",
+};
+
+/** Shown before any save that changes what the public site shows. */
+function PublishConfirm({ changes, hits, onConfirm, onCancel }: {
+  changes: Change[]; hits: string[]; onConfirm: () => void; onCancel: () => void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  const goesOut = changes.some((c) => c.kind === "added" || c.kind === "changed" || c.kind === "published");
+
+  return (
+    <dialog ref={ref} className="builder-log publish-confirm" aria-labelledby="publish-title" onCancel={(e) => { e.preventDefault(); onCancel(); }}>
+      <div className="builder-log-body">
+        <h2 id="publish-title">공개 사이트가 바뀝니다</h2>
+        <ul className="admin-changes">
+          {changes.map((c) => (
+            <li key={`${c.section}-${c.id}-${c.kind}`}>
+              <span className={`admin-kind ${c.kind}`}>{publicWord[c.kind]}</span>
+              <span className="mono-ko">{sectionById[c.section].label}</span>
+              <span>{c.label}</span>
+            </li>
+          ))}
+        </ul>
+        {hits.length > 0 && (
+          <p className="admin-status publish-warn">공개 항목에 주의 단어가 있습니다: <b>{hits.join(", ")}</b></p>
+        )}
+        <div className="publish-note">
+          {goesOut && <p>저장하면 1~2분 뒤 누구나 볼 수 있는 사이트에 나타납니다.</p>}
+          <p>
+            공개된 내용은 공개 저장소의 기록에 <b>영구히 남습니다.</b> 나중에 비공개로 바꾸거나 지워도 사이트에서만 사라지고,
+            GitHub의 과거 기록에서는 계속 볼 수 있습니다.
+          </p>
+        </div>
+        <div className="builder-foot">
+          <button type="button" className="admin-btn" onClick={onCancel} autoFocus>취소</button>
+          <button type="button" className="admin-btn primary" onClick={onConfirm}>확인하고 저장</button>
+        </div>
+      </div>
+    </dialog>
   );
 }
 
